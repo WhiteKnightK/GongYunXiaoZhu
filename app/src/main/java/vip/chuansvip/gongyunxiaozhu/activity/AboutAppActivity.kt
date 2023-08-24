@@ -7,11 +7,12 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import com.kongzue.dialogx.dialogs.PopTip
+import vip.chuansvip.gongyunxiaozhu.bean.BaseActivity
 import vip.chuansvip.gongyunxiaozhu.databinding.ActivityAboutAppBinding
 import vip.chuansvip.gongyunxiaozhu.util.UpdateUtil
 import vip.chuansvip.gongyunxiaozhu.util.joinQQGroup
 
-class AboutAppActivity : AppCompatActivity(), UpdateUtil.UpdateCallback {
+class AboutAppActivity : BaseActivity(), UpdateUtil.UpdateCallback {
     lateinit var binding: ActivityAboutAppBinding
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

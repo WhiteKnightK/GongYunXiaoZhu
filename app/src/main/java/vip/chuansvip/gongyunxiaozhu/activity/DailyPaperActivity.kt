@@ -40,6 +40,7 @@ import vip.chuansvip.gongyunxiaozhu.util.EncryptionAndDecryptUtils
 import vip.chuansvip.gongyunxiaozhu.util.GlobalDataManager
 import vip.chuansvip.gongyunxiaozhu.util.SignUtil
 import com.kongzue.dialogx.interfaces.OnMenuItemSelectListener
+import vip.chuansvip.gongyunxiaozhu.bean.BaseActivity
 import vip.chuansvip.gongyunxiaozhu.bean.MonthPaperRequestBody
 import vip.chuansvip.gongyunxiaozhu.bean.WeekPaperRequestBody
 import vip.chuansvip.gongyunxiaozhu.util.getAllWeeksSinceLastYear
@@ -48,7 +49,7 @@ import vip.chuansvip.gongyunxiaozhu.util.parseDateRange
 import java.time.LocalDate
 
 
-class DailyPaperActivity : AppCompatActivity() {
+class DailyPaperActivity : BaseActivity() {
     lateinit var binding: ActivityDailyPaperBinding
     lateinit var api: ApiServer
     lateinit var signUtil: SignUtil
@@ -257,10 +258,11 @@ class DailyPaperActivity : AppCompatActivity() {
                     TipDialog.show("请求失败，请检查网络", WaitDialog.TYPE.ERROR)
                     return
                 }
-                if (p1.body()?.code != 200) {
-                    TipDialog.show("请求失败，请检查网络", WaitDialog.TYPE.ERROR)
-                    return
+                if (p1.body()!!.msg == "token失效") {
+                    val intent = Intent("com.example.broadcastbestpractice.FORCE_OFFLINE")
+                    sendBroadcast(intent)
                 }
+
 
                 Log.d("检测", "listByStuServer:${p1.body()} ")
                 Log.d("检测", "listByStuServer:${p1.body()?.data} ")
@@ -268,8 +270,12 @@ class DailyPaperActivity : AppCompatActivity() {
 
 
                 val listByStuBackData = p1.body()?.data
-
-                for (i in listByStuBackData!!) {
+                //判断空指针
+                if (listByStuBackData == null) {
+//                    TipDialog.show("请求失败，请检查网络", WaitDialog.TYPE.ERROR)
+                    return
+                }
+                for (i in listByStuBackData) {
                     rcDataList.add(i)
                 }
                 val layoutManager =

@@ -11,7 +11,6 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
 import android.view.inputmethod.InputMethodManager
-import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
@@ -38,16 +37,16 @@ import com.amap.api.services.help.InputtipsQuery
 import com.amap.api.services.poisearch.PoiResult
 import com.amap.api.services.poisearch.PoiSearch
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.kongzue.dialogx.dialogs.PopMenu
 import com.permissionx.guolindev.PermissionX
 import vip.chuansvip.gongyunxiaozhu.R
 import vip.chuansvip.gongyunxiaozhu.adapter.PoiAdapter
 import vip.chuansvip.gongyunxiaozhu.adapter.PoiAdapterListener
+import vip.chuansvip.gongyunxiaozhu.bean.BaseActivity
 import vip.chuansvip.gongyunxiaozhu.bean.LocationInfo
 import vip.chuansvip.gongyunxiaozhu.databinding.ActivitySelectAddressBinding
 
 
-class SelectAddressActivity : AppCompatActivity(), GeocodeSearch.OnGeocodeSearchListener,
+class SelectAddressActivity : BaseActivity(), GeocodeSearch.OnGeocodeSearchListener,
     PoiAdapterListener {
     lateinit var binding: ActivitySelectAddressBinding
 

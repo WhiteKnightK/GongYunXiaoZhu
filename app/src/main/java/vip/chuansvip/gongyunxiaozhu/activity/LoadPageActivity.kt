@@ -3,8 +3,9 @@ package vip.chuansvip.gongyunxiaozhu.activity
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import vip.chuansvip.gongyunxiaozhu.R
+import vip.chuansvip.gongyunxiaozhu.bean.BaseActivity
 
-class LoadPageActivity : AppCompatActivity() {
+class LoadPageActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_load_page)

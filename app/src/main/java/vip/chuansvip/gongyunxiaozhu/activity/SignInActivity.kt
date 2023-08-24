@@ -23,6 +23,7 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import vip.chuansvip.gongyunxiaozhu.adapter.SignInListAdapter
+import vip.chuansvip.gongyunxiaozhu.bean.BaseActivity
 import vip.chuansvip.gongyunxiaozhu.bean.LocationInfo
 import vip.chuansvip.gongyunxiaozhu.bean.RewindSignInRequestBody
 import vip.chuansvip.gongyunxiaozhu.bean.RewindSignInResponseBody
@@ -39,7 +40,7 @@ import vip.chuansvip.gongyunxiaozhu.util.SignUtil
 import vip.chuansvip.gongyunxiaozhu.util.isAfterToday
 import vip.chuansvip.gongyunxiaozhu.util.isBeforeToday
 
-class SignInActivity : AppCompatActivity() {
+class SignInActivity : BaseActivity() {
     lateinit var binding: ActivitySignInBinding
 
     companion object {
@@ -122,20 +123,32 @@ class SignInActivity : AppCompatActivity() {
                 p0: Call<SignInListSynchroResponseBody>,
                 p1: Response<SignInListSynchroResponseBody>
             ) {
-                if (p1.code() != 200){
-                    TipDialog.show("同步失败", WaitDialog.TYPE.ERROR)
-                    return
+//                if (p1.code() != 200){
+//                    TipDialog.show("同步失败", WaitDialog.TYPE.ERROR)
+//                    return
+//                }
+                if (p1.body()!!.msg == "token失效") {
+                    val intent = Intent("com.example.broadcastbestpractice.FORCE_OFFLINE")
+                    sendBroadcast(intent)
                 }
                 //判空
                 if (p1.body() == null ){
-                    TipDialog.show("暂无签到记录", WaitDialog.TYPE.ERROR)
+//                    TipDialog.show("暂无签到记录", WaitDialog.TYPE.ERROR)
                     return
                 }
                 val signInListSynchroResponseBody = p1.body()
+                if (signInListSynchroResponseBody == null) {
 
+                    return
+                }
+                if (signInListSynchroResponseBody.data == null) {
+//                    TipDialog.show("暂无签到记录", WaitDialog.TYPE.ERROR)
+                    return
+                }
+                // 继续进行操作
                 val layoutManager = StaggeredGridLayoutManager(1, StaggeredGridLayoutManager.VERTICAL)
                 binding.signInListRv.layoutManager = layoutManager
-                val adapter = SignInListAdapter(signInListSynchroResponseBody!!.data)
+                val adapter = SignInListAdapter(signInListSynchroResponseBody.data)
                 binding.signInListRv.adapter = adapter
 
                 //输出日志

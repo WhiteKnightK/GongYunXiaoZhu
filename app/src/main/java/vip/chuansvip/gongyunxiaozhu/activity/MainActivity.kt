@@ -12,7 +12,9 @@ import com.kongzue.dialogx.interfaces.OnMenuItemSelectListener
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import vip.chuansvip.gongyunxiaozhu.MyApplication.Companion.context
 import vip.chuansvip.gongyunxiaozhu.R
+import vip.chuansvip.gongyunxiaozhu.bean.BaseActivity
 import vip.chuansvip.gongyunxiaozhu.bean.GetPlanByStuBack
 import vip.chuansvip.gongyunxiaozhu.bean.GetPlanByStuRequestBody
 import vip.chuansvip.gongyunxiaozhu.databinding.ActivityMainBinding
@@ -24,7 +26,7 @@ import vip.chuansvip.gongyunxiaozhu.util.GlobalDataManager
 import vip.chuansvip.gongyunxiaozhu.util.SharedPrefsKeys
 import vip.chuansvip.gongyunxiaozhu.util.SignUtil
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : BaseActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var homeFragment: HomeFragment
     private lateinit var personFragment: PersonFragment
@@ -71,9 +73,13 @@ class MainActivity : AppCompatActivity() {
                 if (p1.body() == null){
                     return
                 }
-                if (p1.body()?.code != 200){
-                    TipDialog.show(p1.body()?.msg, WaitDialog.TYPE.ERROR);
+                if (p1.body()!!.msg == "token失效") {
+                    val intent = Intent("com.example.broadcastbestpractice.FORCE_OFFLINE")
+                    context!!.sendBroadcast(intent)
                 }
+//                if (p1.body()?.code != 200){
+//                    TipDialog.show(p1.body()?.msg, WaitDialog.TYPE.ERROR);
+//                }
                 val data = p1.body()?.data
 //                Log.d("检测", "getPlanByStuServer:  $data")
 

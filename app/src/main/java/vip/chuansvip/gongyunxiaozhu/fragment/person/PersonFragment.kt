@@ -219,15 +219,20 @@ class PersonFragment : Fragment() {
                     p0: Call<GetMoGuDingUserInfoBack>,
                     p1: Response<GetMoGuDingUserInfoBack>
                 ) {
+
                     Log.d("检测", "onResponse: ${p1.body()}")
                     if (p1.body() == null) {
-                        TipDialog.show("加载失败,请检查网络后重试", WaitDialog.TYPE.ERROR);
+                        TipDialog.show("个人信息返回请求体为空", WaitDialog.TYPE.ERROR);
                         return
                     }
-                    if (p1.body()?.code != 200) {
-                        TipDialog.show(p1.body()?.msg, WaitDialog.TYPE.ERROR);
-                        return
+                    if (p1.body()!!.msg == "token失效") {
+                        val intent = Intent("com.example.broadcastbestpractice.FORCE_OFFLINE")
+                        context!!.sendBroadcast(intent)
                     }
+//                    if (p1.body()?.code != 200) {
+//                        TipDialog.show(p1.body()?.msg, WaitDialog.TYPE.ERROR);
+//                        return
+//                    }
                     //解密数据
                     val encryptionAndDecryptUtils = EncryptionAndDecryptUtils()
                     val userInfoString = encryptionAndDecryptUtils.decryptData(p1.body()?.data!!)

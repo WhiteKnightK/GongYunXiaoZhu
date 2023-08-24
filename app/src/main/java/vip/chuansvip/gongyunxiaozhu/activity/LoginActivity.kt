@@ -14,6 +14,7 @@ import okhttp3.RequestBody
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import vip.chuansvip.gongyunxiaozhu.bean.BaseActivity
 import vip.chuansvip.gongyunxiaozhu.bean.GetMoGuDingUserInfoBack
 import vip.chuansvip.gongyunxiaozhu.bean.LoginBack
 import vip.chuansvip.gongyunxiaozhu.bean.LoginData
@@ -24,7 +25,7 @@ import vip.chuansvip.gongyunxiaozhu.util.SharedPrefsKeys
 import vip.chuansvip.gongyunxiaozhu.util.UpdateUtil
 
 
-class LoginActivity : AppCompatActivity(), UpdateUtil.UpdateCallback {
+class LoginActivity : BaseActivity(), UpdateUtil.UpdateCallback {
 
     val binding: ActivityLoginBinding by lazy {
         ActivityLoginBinding.inflate(layoutInflater)
