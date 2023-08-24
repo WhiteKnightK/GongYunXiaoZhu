@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:background="@drawable/item_background"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:paddingLeft="12dp"
+        android:paddingTop="8dp"
+        android:paddingRight="20dp"
+        android:paddingBottom="8dp">
+
+        <LinearLayout
+            android:layout_width="60dp"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            >
+            <TextView
+                android:id="@+id/tv_sign_in_type"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/SubTint"
+                android:textSize="18sp"
+                android:text="上班"
+                />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tv_poi_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="打卡地址"
+                android:textColor="#000"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/tv_sign_address_item"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="北京市海淀区中关村"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/item_sign_in_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+
+                android:paddingTop="5dp"
+                android:paddingRight="8dp"
+                android:text="2023-08-11 20:20:58"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/iv_poi_check"
+            android:layout_width="25dp"
+            android:layout_height="25dp"
+            android:src="@drawable/dui"
+            android:visibility="gone"
+            />
+    </LinearLayout>
+
+    <View
+        android:layout_marginLeft="12dp"
+        android:layout_marginRight="12dp"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#e2e2e2" />
+</LinearLayout>

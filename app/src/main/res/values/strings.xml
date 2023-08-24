@@ -1,0 +1,68 @@
+<resources>
+    <string name="app_name">工云小助</string>
+    <string name="SecretKEY">23DbtQHR2UMbH6mJ</string>
+    <string name="login_title">登录</string>
+    <string name="account_title">账号</string>
+    <string name="password_title">密码</string>
+    <string name="phone_input_hint">请输入工学云手机号</string>
+    <string name="password_input_hint">请输入工学云密码</string>
+    <string name="remember_phone_and_password">记住账号和密码</string>
+    <string name="login">登录</string>
+    <string name="use_hint">登录即代表您同意</string>
+    <string name="notice_for_use">《使用须知》</string>
+    <string name="notice_for_use_text">使用须知</string>
+
+    <string name="notice_for_use_no_book_title_mark">使用须知</string>
+    <string name="notice_for_use_start">欢迎使用工云小助 App，以下为本软件使用须知，请仔细阅读。</string>
+    <string name="notice_for_use_content">
+        1.本软件除部分托管服务外不会收集用户信息与用户的工学云或蘑菇丁账号信息，日报周报签到等与工学云或蘑菇丁相关的数据均直连工学云或蘑菇丁服务器\n\n
+        2.本软件免费使用，请勿相信付费下载渠道。如发现有组织或个人提供付费下载本软件的行为，请直接举报\n\n
+        3.本软件不代表工学云或蘑菇丁软件的立场任何使用者与分享者的行为或言论也不代表本软件与本软件开发者的立场\n\n
+        4.本软件仅供内部学习与交流免费使用，请勿用于违法违规的行为，使用者的任何行为与言论与本软件的开发者无关\n\n
+        5.本软件部分功能经过长期测试已尽量降低使用风险，但用户还是需要自行承担一定的风险，包括但不限于:签到或实习报告数据异工学云或蘑菇丁账号异常、账号冻结\n\n
+        6.本软件欢迎使用者提出建议与反馈 Bug\n\n
+        7.本软件与本须知最终解释权归本软件开发者所有
+    </string>
+    <string name="notice_for_use_end">如继续使用则代表您同意以上须知并自愿承担风险，祝您使用愉快。</string>
+    <string name="home">首页</string>
+    <string name="person">我的</string>
+    <string name="schoolName">学校</string>
+    <string name="depName">院系</string>
+    <string name="majorField">专业</string>
+    <string name="grade">学级</string>
+    <string name="className">班级</string>
+    <string name="userId">用户 ID</string>
+    <string name="moguNo">蘑菇号</string>
+    <string name="userType">用户类型</string>
+    <string name="createTime">注册时间</string>
+    <string name="moguAge">注册时长</string>
+    <string name="logout">退出登录</string>
+    <string name="daily_paper">日报</string>
+    <string name="internship_program">实习计划</string>
+    <string name="daily_paper_name">日报标题</string>
+    <string name="daily_paper_content">日报内容</string>
+    <string name="daily_paper_name_input_hint">请输入日报标题</string>
+    <string name="daily_paper_content_input_hint">请输入日报内容</string>
+    <string name="submit">提交</string>
+    <string name="daily_paper_history">历史日报</string>
+    <string name="weeks">周次</string>
+    <string name="weeks_hint">请输入周次</string>
+
+    <string name="weeks_date">周次日期</string>
+    <string name="month">月份</string>
+    <string name="month_hint">请输入月份</string>
+    <string name="sign">签到</string>
+    <string name="sign_date">签到日期</string>
+    <string name="detailed_address">签到地址</string>
+    <string name="sign_type">签到类型</string>
+    <string name="sign_remark">签到备注</string>
+    <string name="sign_remark_hint">请输入签到备注（非必填项）</string>
+    <string name="sign_in_history">历史签到</string>
+    <string name="sign_in_history_no_data">暂无签到数据</string>
+    <string name="feedback">意见反馈</string>
+    <string name="About_Software">关于 APP</string>
+    <string name="App_version">App版本</string>
+    <string name="Questions_and_suggestions_feedback">问题与建议反馈</string>
+
+
+</resources>
