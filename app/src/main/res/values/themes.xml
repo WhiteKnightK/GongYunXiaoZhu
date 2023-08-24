@@ -16,5 +16,6 @@
         <!-- Customize your theme here. -->
 
         <item name="android:forceDarkAllowed" tools:targetApi="q">false</item>
+
     </style>
 </resources>

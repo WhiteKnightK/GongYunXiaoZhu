@@ -132,7 +132,7 @@ class MainActivity : AppCompatActivity() {
                 hide(currentFragment)
                 currentFragment = fragment
             }
-            commit()
+            commitAllowingStateLoss()
         }
     }
 

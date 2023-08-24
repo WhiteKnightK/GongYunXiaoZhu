@@ -264,7 +264,7 @@ class PersonFragment : Fragment() {
                 }
 
                 override fun onFailure(p0: Call<GetMoGuDingUserInfoBack>, p1: Throwable) {
-                    TipDialog.show("加载失败,请检查网络后重试", WaitDialog.TYPE.ERROR);
+                    TipDialog.show("个人信息加载失败", WaitDialog.TYPE.ERROR);
 
                 }
 
