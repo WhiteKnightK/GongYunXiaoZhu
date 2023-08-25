@@ -7,6 +7,7 @@ import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Headers
 import retrofit2.http.POST
+import retrofit2.http.Query
 import vip.chuansvip.gongyunxiaozhu.bean.AppBannerInfo
 import vip.chuansvip.gongyunxiaozhu.bean.AppServer
 import vip.chuansvip.gongyunxiaozhu.bean.AppVersionInfo
@@ -14,6 +15,8 @@ import vip.chuansvip.gongyunxiaozhu.bean.DailyPaperRequestBody
 import vip.chuansvip.gongyunxiaozhu.bean.FeedBackRequestBody
 import vip.chuansvip.gongyunxiaozhu.bean.FeedBackResponseBody
 import vip.chuansvip.gongyunxiaozhu.bean.GetMoGuDingUserInfoBack
+import vip.chuansvip.gongyunxiaozhu.bean.GetPaperResponseBody
+import vip.chuansvip.gongyunxiaozhu.bean.GetPaperResponseBodyData
 import vip.chuansvip.gongyunxiaozhu.bean.GetPlanByStuBack
 import vip.chuansvip.gongyunxiaozhu.bean.GetPlanByStuRequestBody
 import vip.chuansvip.gongyunxiaozhu.bean.ListByStuBack
@@ -57,6 +60,8 @@ interface ApiServer {
 
     @POST("/attendence/attendanceReplace/v2/save")
     fun rewindSignInServer(@Header("Authorization") token:String,@Header("Sign") sign:String,@Header("Rolekey") rolekey:String,@Body rewindSignInRequestBody: RewindSignInRequestBody ) : Call<RewindSignInResponseBody>
+
+
 }
 
 interface MyApiServer {
@@ -71,6 +76,9 @@ interface MyApiServer {
 
     @POST("api/app/feedback")
     fun feedbackServer(@Body feedbackRequestBody: FeedBackRequestBody) : Call<FeedBackResponseBody>
+
+    @GET("/api/app/papercontent")
+    fun getPaperContentServer(@Query("type") type:Int ) : Call<GetPaperResponseBody>
 
 }
 

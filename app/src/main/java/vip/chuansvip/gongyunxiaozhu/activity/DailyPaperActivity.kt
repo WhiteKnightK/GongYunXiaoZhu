@@ -41,8 +41,11 @@ import vip.chuansvip.gongyunxiaozhu.util.GlobalDataManager
 import vip.chuansvip.gongyunxiaozhu.util.SignUtil
 import com.kongzue.dialogx.interfaces.OnMenuItemSelectListener
 import vip.chuansvip.gongyunxiaozhu.bean.BaseActivity
+import vip.chuansvip.gongyunxiaozhu.bean.GetPaperResponseBody
 import vip.chuansvip.gongyunxiaozhu.bean.MonthPaperRequestBody
 import vip.chuansvip.gongyunxiaozhu.bean.WeekPaperRequestBody
+import vip.chuansvip.gongyunxiaozhu.network.MyApiServer
+import vip.chuansvip.gongyunxiaozhu.network.MyServerCreator
 import vip.chuansvip.gongyunxiaozhu.util.getAllWeeksSinceLastYear
 import vip.chuansvip.gongyunxiaozhu.util.getYearMonthRange
 import vip.chuansvip.gongyunxiaozhu.util.parseDateRange
@@ -52,8 +55,9 @@ import java.time.LocalDate
 class DailyPaperActivity : BaseActivity() {
     lateinit var binding: ActivityDailyPaperBinding
     lateinit var api: ApiServer
-    lateinit var signUtil: SignUtil
-    var listPages = 1
+    private lateinit var myApi: MyApiServer
+    private lateinit var signUtil: SignUtil
+    private var listPages = 1
     lateinit var rcDataList: ArrayList<ListByStuBackData>
 
     companion object {
@@ -66,12 +70,14 @@ class DailyPaperActivity : BaseActivity() {
         binding = ActivityDailyPaperBinding.inflate(layoutInflater)
         setContentView(binding.root)
         api = GongXueYunServerCreator.create(ApiServer::class.java)
+        myApi = MyServerCreator.create(MyApiServer::class.java)
         signUtil = SignUtil()
         rcDataList = ArrayList<ListByStuBackData>()
         submitInit()
 
         listInit()
         pageInit()
+        onClickInit()
 
         // 在适当的位置添加滚动监听
         binding.nc.setOnScrollChangeListener { _, _, scrollY, _, _ ->
@@ -92,14 +98,55 @@ class DailyPaperActivity : BaseActivity() {
                     }
                 }
             }
-            }
+        }
 
 
     }
 
+    private fun onClickInit() {
+        binding.btnFillInOneClick.setOnClickListener {
+            var type = 1
+            when (pageType) {
+                "day" -> {
+                    type = 1
+                }
+
+                "week" -> {
+                    type = 2
+                }
+
+                "month" -> {
+                    type = 3
+                }
+            }
+
+            myApi.getPaperContentServer(type).enqueue(object : Callback<GetPaperResponseBody> {
+                override fun onResponse(
+                    p0: Call<GetPaperResponseBody>,
+                    p1: Response<GetPaperResponseBody>
+                ) {
+                    if (p1.body()?.code == 200) {
+                        binding.edPaperContent.setText(p1.body()?.data?.content)
+                    }
+                }
+
+                override fun onFailure(p0: Call<GetPaperResponseBody>, p1: Throwable) {
+                    TipDialog.show(
+                        this@DailyPaperActivity,
+                        "获取失败,请检查网络后重试",
+                        WaitDialog.TYPE.ERROR
+                    )
+                }
+
+            })
+
+
+        }
+    }
+
     private fun pageInit() {
 
-        binding.edPaperContent.addTextChangedListener(object : TextWatcher{
+        binding.edPaperContent.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
 
             }
@@ -203,7 +250,6 @@ class DailyPaperActivity : BaseActivity() {
                 binding.tvPaperContent.text = "月报内容"
                 binding.edPaperContent.hint = "请输入月报内容"
                 binding.paperHistoricalContent.text = "历史月报"
-
 
 
                 val currentDate = LocalDate.now() // Current date
@@ -369,7 +415,6 @@ class DailyPaperActivity : BaseActivity() {
                                     listInit()
 
 
-
                                 }
 
                                 override fun onFailure(p0: Call<LoginBack>, p1: Throwable) {
@@ -434,19 +479,21 @@ class DailyPaperActivity : BaseActivity() {
 
                             })
                         }
-                        "month" ->{
-                                val MonthPaperRequestBody = MonthPaperRequestBody()
-                                val encryptionAndDecryptUtils = EncryptionAndDecryptUtils()
-                                val currentTimeMillis = System.currentTimeMillis()
-                                val t =
-                                    encryptionAndDecryptUtils.encryptAndPrint(currentTimeMillis.toString())
-                                MonthPaperRequestBody.address = ""
-                                MonthPaperRequestBody.reportType = "month"
-                                MonthPaperRequestBody.title = title
-                                MonthPaperRequestBody.content = content
-                                MonthPaperRequestBody.t = t
-                                MonthPaperRequestBody.planId = GlobalDataManager.globalPlanId
-                                MonthPaperRequestBody.yearmonth = binding.tvYearMonthContent.text.toString()
+
+                        "month" -> {
+                            val MonthPaperRequestBody = MonthPaperRequestBody()
+                            val encryptionAndDecryptUtils = EncryptionAndDecryptUtils()
+                            val currentTimeMillis = System.currentTimeMillis()
+                            val t =
+                                encryptionAndDecryptUtils.encryptAndPrint(currentTimeMillis.toString())
+                            MonthPaperRequestBody.address = ""
+                            MonthPaperRequestBody.reportType = "month"
+                            MonthPaperRequestBody.title = title
+                            MonthPaperRequestBody.content = content
+                            MonthPaperRequestBody.t = t
+                            MonthPaperRequestBody.planId = GlobalDataManager.globalPlanId
+                            MonthPaperRequestBody.yearmonth =
+                                binding.tvYearMonthContent.text.toString()
 
                             Log.d("检测", "responseBody: ${MonthPaperRequestBody} ")
                             api.submitDayReports(

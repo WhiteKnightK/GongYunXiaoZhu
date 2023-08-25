@@ -612,3 +612,15 @@ data class RewindSignInResponseBody(
     val code: Int,
     val msg: String
 )
+
+data class GetPaperResponseBody(
+    val code: Int,
+    val `data`: GetPaperResponseBodyData,
+    val msg: String
+)
+
+data class GetPaperResponseBodyData(
+    val content: String,
+    val id: Int,
+    val word_count: Int
+)

@@ -63,6 +63,7 @@
     <string name="About_Software">关于 APP</string>
     <string name="App_version">App版本</string>
     <string name="Questions_and_suggestions_feedback">问题与建议反馈</string>
+    <string name="fill_in_one_click">一键填充</string>
 
 
 </resources>
