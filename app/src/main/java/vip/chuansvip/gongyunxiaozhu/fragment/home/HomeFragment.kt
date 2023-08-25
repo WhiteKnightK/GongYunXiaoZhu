@@ -104,7 +104,7 @@ class HomeFragment : Fragment() {
                     .addBannerLifecycleObserver(this@HomeFragment)
                     .setBannerGalleryEffect(20,4,0.85f)
 //                    .setBannerGalleryMZ(20,0.8f)
-                    .setLoopTime(6000)
+                    .setLoopTime(3000)
                     .setOnBannerListener { any, i ->
 //                        TipDialog.show("点击了第${i+1}张图片", WaitDialog.TYPE.SUCCESS);\
                         if (bannerList[i].name == "加入QQ群"){

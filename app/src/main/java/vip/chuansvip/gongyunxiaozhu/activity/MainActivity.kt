@@ -25,6 +25,7 @@ import vip.chuansvip.gongyunxiaozhu.network.GongXueYunServerCreator
 import vip.chuansvip.gongyunxiaozhu.util.GlobalDataManager
 import vip.chuansvip.gongyunxiaozhu.util.SharedPrefsKeys
 import vip.chuansvip.gongyunxiaozhu.util.SignUtil
+import vip.chuansvip.gongyunxiaozhu.util.makeDebugDialog
 
 class MainActivity : BaseActivity() {
     private lateinit var binding: ActivityMainBinding
@@ -36,15 +37,16 @@ class MainActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        try {
 
 
-        mainInit(savedInstanceState)
-        planIdInit()
-        globalVariableStorage()
+            mainInit(savedInstanceState)
 
+            globalVariableStorage()
 
-
-
+        }catch (e:Exception){
+            makeDebugDialog(this,e)
+        }
     }
 
     private fun globalVariableStorage() {
@@ -63,43 +65,7 @@ class MainActivity : BaseActivity() {
 
     }
 
-    private fun planIdInit() {
-        val signUtil = SignUtil()
-        val sign = signUtil.getPlanByStuSign()
-        val api = GongXueYunServerCreator.create(ApiServer::class.java)
-        val body = GetPlanByStuRequestBody()
-        api.getPlanByStuServer(GlobalDataManager.globalToken,GlobalDataManager.globalRoleKey,sign,body).enqueue(object : Callback<GetPlanByStuBack>{
-            override fun onResponse(p0: Call<GetPlanByStuBack>, p1: Response<GetPlanByStuBack>) {
-                if (p1.body() == null){
-                    return
-                }
-                if (p1.body()!!.msg == "token失效") {
-                    val intent = Intent("com.example.broadcastbestpractice.FORCE_OFFLINE")
-                    context!!.sendBroadcast(intent)
-                }
-//                if (p1.body()?.code != 200){
-//                    TipDialog.show(p1.body()?.msg, WaitDialog.TYPE.ERROR);
-//                }
-                val data = p1.body()?.data
-//                Log.d("检测", "getPlanByStuServer:  $data")
 
-                GlobalDataManager.globalPlanId = data?.get(0)?.planId.toString()
-
-                DailyPaperActivity.planName = data?.get(0)?.planName.toString()
-                SignInActivity.planName = data?.get(0)?.planName.toString()
-
-//                Log.d("检测", "PlanId:  ${data?.get(0)?.planId.toString()}")
-
-
-            }
-
-            override fun onFailure(p0: Call<GetPlanByStuBack>, p1: Throwable) {
-                TipDialog.show("请求失败,请检查网络后重试", WaitDialog.TYPE.ERROR);
-
-            }
-
-        })
-    }
 
     private fun mainInit(savedInstanceState: Bundle?) {
         if (savedInstanceState == null) {
@@ -118,6 +84,7 @@ class MainActivity : BaseActivity() {
                     homeFragment = HomeFragment()
                     showFragment(homeFragment)
                 }
+
                 R.id.person -> {
                     personFragment = PersonFragment()
                     showFragment(personFragment)

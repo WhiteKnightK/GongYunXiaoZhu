@@ -1,7 +1,6 @@
 package vip.chuansvip.gongyunxiaozhu.activity
 
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -14,15 +13,23 @@ import okhttp3.RequestBody
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import vip.chuansvip.gongyunxiaozhu.MyApplication
 import vip.chuansvip.gongyunxiaozhu.bean.BaseActivity
 import vip.chuansvip.gongyunxiaozhu.bean.GetMoGuDingUserInfoBack
+import vip.chuansvip.gongyunxiaozhu.bean.GetPlanByStuBack
+import vip.chuansvip.gongyunxiaozhu.bean.GetPlanByStuRequestBody
 import vip.chuansvip.gongyunxiaozhu.bean.LoginBack
 import vip.chuansvip.gongyunxiaozhu.bean.LoginData
 import vip.chuansvip.gongyunxiaozhu.databinding.ActivityLoginBinding
+import vip.chuansvip.gongyunxiaozhu.network.ApiServer
+import vip.chuansvip.gongyunxiaozhu.network.GongXueYunServerCreator
 import vip.chuansvip.gongyunxiaozhu.util.EncryptionAndDecryptUtils
 import vip.chuansvip.gongyunxiaozhu.util.GlobalDataManager
 import vip.chuansvip.gongyunxiaozhu.util.SharedPrefsKeys
+import vip.chuansvip.gongyunxiaozhu.util.SignUtil
 import vip.chuansvip.gongyunxiaozhu.util.UpdateUtil
+import vip.chuansvip.gongyunxiaozhu.util.makeDebugDialog
+import vip.chuansvip.gongyunxiaozhu.util.makeDebugDialogThrowable
 
 
 class LoginActivity : BaseActivity(), UpdateUtil.UpdateCallback {
@@ -34,18 +41,72 @@ class LoginActivity : BaseActivity(), UpdateUtil.UpdateCallback {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
-        determineLoginStatus()
-        checkUpdate()
-        loginInit()
+        try {
 
-        binding.checkShowPassword.setOnCheckedChangeListener { buttonView, isChecked ->
-            if (isChecked){
-                binding.edPassword.inputType = 128
-            }else{
-                binding.edPassword.inputType = 129
+
+            determineLoginStatus()
+            checkUpdate()
+            loginInit()
+
+            binding.checkShowPassword.setOnCheckedChangeListener { buttonView, isChecked ->
+                if (isChecked) {
+                    binding.edPassword.inputType = 128
+                } else {
+                    binding.edPassword.inputType = 129
+                }
             }
+        } catch (e: Exception) {
+            makeDebugDialog(this, e)
         }
 
+    }
+
+    private fun planIdInit() {
+        val signUtil = SignUtil()
+        val sign = signUtil.getPlanByStuSign()
+        val api = GongXueYunServerCreator.create(ApiServer::class.java)
+        val body = GetPlanByStuRequestBody()
+        api.getPlanByStuServer(
+            GlobalDataManager.globalToken,
+            GlobalDataManager.globalRoleKey,
+            sign,
+            body
+        ).enqueue(object : Callback<GetPlanByStuBack> {
+            override fun onResponse(p0: Call<GetPlanByStuBack>, p1: Response<GetPlanByStuBack>) {
+                if (p1.body() == null) {
+                    return
+                }
+                Log.d("检测", "onResponse:  ${p1.body()}")
+                if (p1.body()!!.msg == "token失效") {
+                    val intent = Intent("com.example.broadcastbestpractice.FORCE_OFFLINE")
+                    MyApplication.context!!.sendBroadcast(intent)
+                } else {
+
+                    val data = p1.body()?.data
+//                Log.d("检测", "getPlanByStuServer:  $data")
+                    TipDialog.show("登录成功", WaitDialog.TYPE.SUCCESS);
+
+                    GlobalDataManager.globalPlanId = data?.get(0)?.planId.toString()
+                    DailyPaperActivity.planName = data?.get(0)?.planName.toString()
+                    SignInActivity.planName = data?.get(0)?.planName.toString()
+
+//                Log.d("检测", "PlanId:  ${data?.get(0)?.planId.toString()}")
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        val intent = Intent(this@LoginActivity, MainActivity::class.java)
+                        startActivity(intent)
+                        finish()
+                    }, 2000) // 延迟2秒跳转到首页
+                }
+
+            }
+
+            override fun onFailure(call: Call<GetPlanByStuBack>, throwable: Throwable) {
+                TipDialog.show("getPlanByStuServer请求异常", WaitDialog.TYPE.ERROR)
+                makeDebugDialogThrowable(this@LoginActivity, throwable)
+            }
+
+
+        })
     }
 
     private fun determineLoginStatus() {
@@ -58,10 +119,14 @@ class LoginActivity : BaseActivity(), UpdateUtil.UpdateCallback {
         Log.d("检测", "sp:$token,$userId,$roleKey,$planId")
 
 
-        if (token != "" && userId != "" && roleKey != "" ) {
+        if (token != "" && userId != "" && roleKey != "") {
             val emptyJson = "{}"
             val requestBody = RequestBody.create("application/json".toMediaType(), emptyJson)
-            GlobalDataManager.allServer.getUserInfo(token.toString(),roleKey.toString(),requestBody).enqueue(object : Callback<GetMoGuDingUserInfoBack>{
+            GlobalDataManager.allServer.getUserInfo(
+                token.toString(),
+                roleKey.toString(),
+                requestBody
+            ).enqueue(object : Callback<GetMoGuDingUserInfoBack> {
                 override fun onResponse(
                     p0: Call<GetMoGuDingUserInfoBack>,
                     p1: Response<GetMoGuDingUserInfoBack>
@@ -71,7 +136,7 @@ class LoginActivity : BaseActivity(), UpdateUtil.UpdateCallback {
                     Log.d("检测", "determineLoginStatus: ${p1.body()}")
                     Log.d("检测", "determineLoginStatus: ${p1.body()!!.code}")
 
-                    if (p1.body()!!.code == 200){
+                    if (p1.body()!!.code == 200) {
                         GlobalDataManager.globalPlanId = planId.toString()
                         GlobalDataManager.globalUserId = userId.toString()
                         GlobalDataManager.globalToken = token.toString()
@@ -101,7 +166,7 @@ class LoginActivity : BaseActivity(), UpdateUtil.UpdateCallback {
     private fun checkUpdate() {
         val handler = Handler(Looper.getMainLooper())
         val updateUtil = UpdateUtil()
-        updateUtil.checkVersion(this, handler,this)
+        updateUtil.checkVersion(this, handler, this)
     }
 
     private fun loginInit() {
@@ -139,7 +204,7 @@ class LoginActivity : BaseActivity(), UpdateUtil.UpdateCallback {
     }
 
 
-    private fun login(phone: String, pwd: String){
+    private fun login(phone: String, pwd: String) {
         val encryptionAndDecryptUtils = EncryptionAndDecryptUtils()
         val encryptedPhone = encryptionAndDecryptUtils.encryptAndPrint(phone)
         val encryptedPassword = encryptionAndDecryptUtils.encryptAndPrint(pwd)
@@ -163,10 +228,6 @@ class LoginActivity : BaseActivity(), UpdateUtil.UpdateCallback {
                     TipDialog.show(loginBack.msg, WaitDialog.TYPE.ERROR);
                     return
                 }
-
-                TipDialog.show("登录成功", WaitDialog.TYPE.SUCCESS);
-
-
                 if (binding.checkRememberPhoneAndPassword.isChecked) {
                     //保存账号密码
                     val sp = getSharedPreferences("user", MODE_PRIVATE)
@@ -180,12 +241,13 @@ class LoginActivity : BaseActivity(), UpdateUtil.UpdateCallback {
                 GlobalDataManager.globalRoleKey = loginBack.data.roleKey
 
 
-                Handler(Looper.getMainLooper()).postDelayed({
-                    val intent = Intent(this@LoginActivity, MainActivity::class.java)
-                    startActivity(intent)
-                    finish()
-                }, 2000) // 延迟2秒跳转到首页
-                println("检测数据$loginBack")
+                planIdInit()
+
+
+
+
+
+
 
             }
 
