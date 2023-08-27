@@ -2,9 +2,11 @@ package vip.chuansvip.gongyunxiaozhu
 
 import android.app.Application
 import android.content.Context
+import android.os.Build
 import com.kongzue.dialogx.DialogX
 import com.kongzue.dialogx.style.IOSStyle
-import com.kongzue.dialogx.style.MIUIStyle
+import com.tencent.bugly.crashreport.CrashReport
+import com.tencent.bugly.crashreport.CrashReport.UserStrategy
 
 class MyApplication : Application() {
     companion object{
@@ -14,8 +16,14 @@ class MyApplication : Application() {
         super.onCreate()
         //初始化
         context = applicationContext
+
+        val deviceModel = Build.MODEL
+        val strategy = UserStrategy(applicationContext)
+        strategy.deviceModel = deviceModel;
+        CrashReport.initCrashReport(context, "35530b96f4", true, strategy);
         DialogX.init(this);
         dialogXInit()
+
     }
 
     fun dialogXInit(){

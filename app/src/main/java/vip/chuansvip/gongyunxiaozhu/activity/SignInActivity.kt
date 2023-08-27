@@ -1,29 +1,31 @@
 package vip.chuansvip.gongyunxiaozhu.activity
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.Gravity
 import android.view.View
-import android.widget.Toast
-import androidx.activity.result.ActivityResultRegistry
-import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityOptionsCompat
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.kongzue.dialogx.datepicker.CalendarDialog
 import com.kongzue.dialogx.datepicker.interfaces.OnDateSelected
+import com.kongzue.dialogx.dialogs.MessageDialog
 import com.kongzue.dialogx.dialogs.PopMenu
 import com.kongzue.dialogx.dialogs.PopTip
 import com.kongzue.dialogx.dialogs.TipDialog
 import com.kongzue.dialogx.dialogs.WaitDialog
+import com.tencent.bugly.crashreport.CrashReport
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import vip.chuansvip.gongyunxiaozhu.MyApplication
 import vip.chuansvip.gongyunxiaozhu.adapter.SignInListAdapter
 import vip.chuansvip.gongyunxiaozhu.bean.BaseActivity
+import vip.chuansvip.gongyunxiaozhu.bean.GetPlanByStuBack
+import vip.chuansvip.gongyunxiaozhu.bean.GetPlanByStuRequestBody
 import vip.chuansvip.gongyunxiaozhu.bean.LocationInfo
 import vip.chuansvip.gongyunxiaozhu.bean.RewindSignInRequestBody
 import vip.chuansvip.gongyunxiaozhu.bean.RewindSignInResponseBody
@@ -39,6 +41,7 @@ import vip.chuansvip.gongyunxiaozhu.util.GlobalDataManager
 import vip.chuansvip.gongyunxiaozhu.util.SignUtil
 import vip.chuansvip.gongyunxiaozhu.util.isAfterToday
 import vip.chuansvip.gongyunxiaozhu.util.isBeforeToday
+import vip.chuansvip.gongyunxiaozhu.util.joinQQGroup
 
 class SignInActivity : BaseActivity() {
     lateinit var binding: ActivitySignInBinding
@@ -94,6 +97,9 @@ class SignInActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySignInBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        planIdInit()
+
         api = GongXueYunServerCreator.create(ApiServer::class.java)
 
 
@@ -107,7 +113,64 @@ class SignInActivity : BaseActivity() {
 
     }
 
-    private fun listSynchroInit(year:String,month:String,day:String) {
+
+    private fun planIdInit() {
+        val signUtil = SignUtil()
+        val sign = signUtil.getPlanByStuSign()
+        val api = GongXueYunServerCreator.create(ApiServer::class.java)
+        val body = GetPlanByStuRequestBody()
+        api.getPlanByStuServer(
+            GlobalDataManager.globalToken,
+            GlobalDataManager.globalRoleKey,
+            sign,
+            body
+        ).enqueue(object : Callback<GetPlanByStuBack> {
+            override fun onResponse(p0: Call<GetPlanByStuBack>, p1: Response<GetPlanByStuBack>) {
+                if (p1.body() == null) {
+                    return
+                }
+                Log.d("检测", "onResponse:  ${p1.body()}")
+                if (p1.body()!!.msg == "token失效") {
+                    val intent = Intent("com.example.broadcastbestpractice.FORCE_OFFLINE")
+                    MyApplication.context!!.sendBroadcast(intent)
+                } else {
+
+                    val data = p1.body()?.data
+                    //判断planId planName是否为空
+                    if (data?.get(0)?.planId == null || data?.get(0)?.planName == null) {
+                        if (data?.get(0)?.planId == null) {
+                            TipDialog.show("planId为空", WaitDialog.TYPE.ERROR)
+                        } else {
+                            TipDialog.show("planName为空", WaitDialog.TYPE.ERROR)
+                        }
+
+                        //详细一点
+                        return
+                    }
+
+                    GlobalDataManager.globalPlanId = data[0].planId.toString()
+
+                    planName = data[0].planName.toString()
+                    binding.tvInternshipProgramSign.text = planName
+
+
+//                Log.d("检测", "PlanId:  ${data?.get(0)?.planId.toString()}")
+
+                }
+
+            }
+
+            override fun onFailure(call: Call<GetPlanByStuBack>, throwable: Throwable) {
+//                TipDialog.show("getPlanByStuServer请求异常", WaitDialog.TYPE.ERROR)
+//                makeDebugDialogThrowable(this@LoginActivity, throwable)
+                CrashReport.postCatchedException(throwable)
+            }
+
+
+        })
+    }
+
+    private fun listSynchroInit(year: String, month: String, day: String) {
 
         val startTime = "$year-$month-$day 00:00:00"
         val endTime = "$year-$month-$day 23:59:59"
@@ -115,10 +178,14 @@ class SignInActivity : BaseActivity() {
 
         //获取两个值一个 是当前这一天的日期和结尾时间一个是 五天前的日期和开始时间
         val signInListSynchroRequestBody = SignInListSynchroRequestBody(startTime, endTime)
-        try {
 
 
-        api.getSignInListServer(GlobalDataManager.globalToken,GlobalDataManager.globalRoleKey,signInListSynchroRequestBody).enqueue(object: Callback<SignInListSynchroResponseBody>{
+
+        api.getSignInListServer(
+            GlobalDataManager.globalToken,
+            GlobalDataManager.globalRoleKey,
+            signInListSynchroRequestBody
+        ).enqueue(object : Callback<SignInListSynchroResponseBody> {
             override fun onResponse(
                 p0: Call<SignInListSynchroResponseBody>,
                 p1: Response<SignInListSynchroResponseBody>
@@ -132,7 +199,7 @@ class SignInActivity : BaseActivity() {
                     sendBroadcast(intent)
                 }
                 //判空
-                if (p1.body() == null ){
+                if (p1.body() == null) {
 //                    TipDialog.show("暂无签到记录", WaitDialog.TYPE.ERROR)
                     return
                 }
@@ -146,7 +213,8 @@ class SignInActivity : BaseActivity() {
                     return
                 }
                 // 继续进行操作
-                val layoutManager = StaggeredGridLayoutManager(1, StaggeredGridLayoutManager.VERTICAL)
+                val layoutManager =
+                    StaggeredGridLayoutManager(1, StaggeredGridLayoutManager.VERTICAL)
                 binding.signInListRv.layoutManager = layoutManager
                 val adapter = SignInListAdapter(signInListSynchroResponseBody.data)
                 binding.signInListRv.adapter = adapter
@@ -156,13 +224,10 @@ class SignInActivity : BaseActivity() {
             }
 
             override fun onFailure(p0: Call<SignInListSynchroResponseBody>, p1: Throwable) {
-                TODO("Not yet implemented")
+                CrashReport.postCatchedException(p1)
             }
 
         })
-        }catch (e:Exception){
-            Log.d("签到列表同步", "listSynchroInit: $e")
-        }
     }
 
     private fun onClickInit() {
@@ -184,9 +249,9 @@ class SignInActivity : BaseActivity() {
                         if (isAfterToday) {
                             TipDialog.show("选择的日期不能晚于今天!", WaitDialog.TYPE.ERROR);
                             return
-                        }else{
+                        } else {
                             val isBeforeToday = isBeforeToday(year, month, day)
-                            if (isBeforeToday){
+                            if (isBeforeToday) {
                                 PopTip.show("已进入补签模式...");
                             }
                             isRewindSignIn = isBeforeToday
@@ -267,51 +332,48 @@ class SignInActivity : BaseActivity() {
 
 
 
-                try {
 
 
-                    api.signInServer(
-                        GlobalDataManager.globalToken,
-                        sign,
-                        GlobalDataManager.globalRoleKey,
-                        signInRequestBody
-                    ).enqueue(object : Callback<SignInResponseBody> {
-                        override fun onResponse(
-                            p0: Call<SignInResponseBody>,
-                            p1: Response<SignInResponseBody>
-                        ) {
-                            //输出日志
-                            Log.d("检测", "onResponse: ${p1.body()}")
-                            val signInResponseBody = p1.body()
-                            if (signInResponseBody != null) {
-                                if (signInResponseBody.code == 200) {
-                                    TipDialog.show("打卡成功!", WaitDialog.TYPE.SUCCESS);
-                                    val date = java.util.Calendar.getInstance()
-                                    val year = date.get(java.util.Calendar.YEAR)
-                                    val month = date.get(java.util.Calendar.MONTH) + 1
-                                    val day = date.get(java.util.Calendar.DAY_OF_MONTH)
-                                    listSynchroInit(
-                                        year.toString(),
-                                        month.toString(),
-                                        day.toString()
-                                    )
-                                } else {
-                                    TipDialog.show(signInResponseBody.msg, WaitDialog.TYPE.ERROR);
-                                }
+
+                api.signInServer(
+                    GlobalDataManager.globalToken,
+                    sign,
+                    GlobalDataManager.globalRoleKey,
+                    signInRequestBody
+                ).enqueue(object : Callback<SignInResponseBody> {
+                    override fun onResponse(
+                        p0: Call<SignInResponseBody>,
+                        p1: Response<SignInResponseBody>
+                    ) {
+                        //输出日志
+                        Log.d("检测", "onResponse: ${p1.body()}")
+                        val signInResponseBody = p1.body()
+                        if (signInResponseBody != null) {
+                            if (signInResponseBody.code == 200) {
+                                TipDialog.show("打卡成功!", WaitDialog.TYPE.SUCCESS);
+                                val date = java.util.Calendar.getInstance()
+                                val year = date.get(java.util.Calendar.YEAR)
+                                val month = date.get(java.util.Calendar.MONTH) + 1
+                                val day = date.get(java.util.Calendar.DAY_OF_MONTH)
+                                listSynchroInit(
+                                    year.toString(),
+                                    month.toString(),
+                                    day.toString()
+                                )
+                            } else {
+                                TipDialog.show(signInResponseBody.msg, WaitDialog.TYPE.ERROR);
                             }
                         }
+                    }
 
-                        override fun onFailure(p0: Call<SignInResponseBody>, p1: Throwable) {
-                            Log.d("检测", "onFailure: ${p1.message}")
-                        }
+                    override fun onFailure(p0: Call<SignInResponseBody>, p1: Throwable) {
+                        CrashReport.postCatchedException(p1)
+                    }
 
-                    })
-                } catch (e: Exception) {
-                    Log.d("检测", "${e.message}")
-                }
+                })
 
 
-            }else{
+            } else {
                 //值为2023-08-22 18:03:00形式
                 //获取当前日期年月日
                 val date = java.util.Calendar.getInstance()
@@ -324,8 +386,8 @@ class SignInActivity : BaseActivity() {
                 val second = date.get(java.util.Calendar.SECOND)
                 //拼接为2023-08-22 18:03:00形式
                 val createTime = "$year-$month-$day $hour:$minute:$second"
-                
-               
+
+
                 val rewindSignInRequestBody = RewindSignInRequestBody(
                     address,
                     locationInfo.city,
@@ -340,7 +402,12 @@ class SignInActivity : BaseActivity() {
                     t,
                     signType
                 )
-                api.rewindSignInServer(GlobalDataManager.globalToken,sign,GlobalDataManager.globalRoleKey,rewindSignInRequestBody).enqueue(object : Callback<RewindSignInResponseBody>{
+                api.rewindSignInServer(
+                    GlobalDataManager.globalToken,
+                    sign,
+                    GlobalDataManager.globalRoleKey,
+                    rewindSignInRequestBody
+                ).enqueue(object : Callback<RewindSignInResponseBody> {
                     override fun onResponse(
                         p0: Call<RewindSignInResponseBody>,
                         p1: Response<RewindSignInResponseBody>
@@ -365,7 +432,7 @@ class SignInActivity : BaseActivity() {
                     }
 
                     override fun onFailure(p0: Call<RewindSignInResponseBody>, p1: Throwable) {
-                        Log.d("检测", "onFailure: ${p1.message}")
+                        CrashReport.postCatchedException(p1)
                     }
 
                 })
@@ -398,9 +465,6 @@ class SignInActivity : BaseActivity() {
 
 
         }
-
-
-        binding.tvInternshipProgramSign.text = planName
 
 
 //        //获取当前日期转换为2023-8-11这种格式

@@ -169,7 +169,7 @@ data class OrgEntity(
     val majorName: String,
     val schoolId: String,
     val schoolName: String,
-    val snowFlakeId: Int,
+    val snowFlakeId: String?,
     val studentId: String,
     val studentNumber: String,
     val userName: String
@@ -308,7 +308,7 @@ data class PlanPaper(
     val paperReportCount: Any,
     val planId: String,
     val planPaperId: String,
-    val snowFlakeId: Int,
+    val snowFlakeId: String?,
     val summaryPaper: Boolean,
     val summaryPaperNum: Int,
     val summaryReportCount: Int,

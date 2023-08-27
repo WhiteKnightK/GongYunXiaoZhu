@@ -12,6 +12,7 @@ import androidx.core.content.pm.PackageInfoCompat
 import com.google.gson.Gson
 import com.kongzue.dialogx.dialogs.MessageDialog
 import com.kongzue.dialogx.util.TextInfo
+import com.tencent.bugly.crashreport.CrashReport
 import vip.chuansvip.gongyunxiaozhu.bean.AppVersionInfo
 import vip.chuansvip.gongyunxiaozhu.network.MyApiServer
 import vip.chuansvip.gongyunxiaozhu.network.MyServerCreator
@@ -67,6 +68,7 @@ class UpdateUtil {
 
             override fun onFailure(p0: retrofit2.Call<AppVersionInfo>, p1: Throwable) {
                 callback.onVersionCheckComplete(false) // 回调版本检查完成，请求失败，没有版本更新
+                CrashReport.postCatchedException(p1)
             }
         })
     }

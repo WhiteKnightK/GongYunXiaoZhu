@@ -1,13 +1,19 @@
 package vip.chuansvip.gongyunxiaozhu.activity
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.View
+import com.kongzue.dialogx.dialogs.MessageDialog
+import com.kongzue.dialogx.dialogs.PopTip
 import com.kongzue.dialogx.dialogs.TipDialog
 import com.kongzue.dialogx.dialogs.WaitDialog
+import com.tencent.bugly.crashreport.CrashReport
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody
 import retrofit2.Call
@@ -28,6 +34,7 @@ import vip.chuansvip.gongyunxiaozhu.util.GlobalDataManager
 import vip.chuansvip.gongyunxiaozhu.util.SharedPrefsKeys
 import vip.chuansvip.gongyunxiaozhu.util.SignUtil
 import vip.chuansvip.gongyunxiaozhu.util.UpdateUtil
+import vip.chuansvip.gongyunxiaozhu.util.joinQQGroup
 import vip.chuansvip.gongyunxiaozhu.util.makeDebugDialog
 import vip.chuansvip.gongyunxiaozhu.util.makeDebugDialogThrowable
 
@@ -41,7 +48,6 @@ class LoginActivity : BaseActivity(), UpdateUtil.UpdateCallback {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
-        try {
 
 
             determineLoginStatus()
@@ -55,59 +61,11 @@ class LoginActivity : BaseActivity(), UpdateUtil.UpdateCallback {
                     binding.edPassword.inputType = 129
                 }
             }
-        } catch (e: Exception) {
-            makeDebugDialog(this, e)
-        }
+
 
     }
 
-    private fun planIdInit() {
-        val signUtil = SignUtil()
-        val sign = signUtil.getPlanByStuSign()
-        val api = GongXueYunServerCreator.create(ApiServer::class.java)
-        val body = GetPlanByStuRequestBody()
-        api.getPlanByStuServer(
-            GlobalDataManager.globalToken,
-            GlobalDataManager.globalRoleKey,
-            sign,
-            body
-        ).enqueue(object : Callback<GetPlanByStuBack> {
-            override fun onResponse(p0: Call<GetPlanByStuBack>, p1: Response<GetPlanByStuBack>) {
-                if (p1.body() == null) {
-                    return
-                }
-                Log.d("检测", "onResponse:  ${p1.body()}")
-                if (p1.body()!!.msg == "token失效") {
-                    val intent = Intent("com.example.broadcastbestpractice.FORCE_OFFLINE")
-                    MyApplication.context!!.sendBroadcast(intent)
-                } else {
 
-                    val data = p1.body()?.data
-//                Log.d("检测", "getPlanByStuServer:  $data")
-                    TipDialog.show("登录成功", WaitDialog.TYPE.SUCCESS);
-
-                    GlobalDataManager.globalPlanId = data?.get(0)?.planId.toString()
-                    DailyPaperActivity.planName = data?.get(0)?.planName.toString()
-                    SignInActivity.planName = data?.get(0)?.planName.toString()
-
-//                Log.d("检测", "PlanId:  ${data?.get(0)?.planId.toString()}")
-                    Handler(Looper.getMainLooper()).postDelayed({
-                        val intent = Intent(this@LoginActivity, MainActivity::class.java)
-                        startActivity(intent)
-                        finish()
-                    }, 2000) // 延迟2秒跳转到首页
-                }
-
-            }
-
-            override fun onFailure(call: Call<GetPlanByStuBack>, throwable: Throwable) {
-                TipDialog.show("getPlanByStuServer请求异常", WaitDialog.TYPE.ERROR)
-                makeDebugDialogThrowable(this@LoginActivity, throwable)
-            }
-
-
-        })
-    }
 
     private fun determineLoginStatus() {
         val sp = getSharedPreferences("user", MODE_PRIVATE)
@@ -148,7 +106,7 @@ class LoginActivity : BaseActivity(), UpdateUtil.UpdateCallback {
                 }
 
                 override fun onFailure(p0: Call<GetMoGuDingUserInfoBack>, p1: Throwable) {
-                    Log.d("检测", "determineLoginStatus: $p1")
+                    CrashReport.postCatchedException(p1)
 
                 }
 
@@ -236,13 +194,23 @@ class LoginActivity : BaseActivity(), UpdateUtil.UpdateCallback {
                     editor.putString("password", pwd)
                     editor.apply()
                 }
-                GlobalDataManager.globalToken = loginBack.data.token
-                GlobalDataManager.globalUserId = loginBack.data.userId
-                GlobalDataManager.globalRoleKey = loginBack.data.roleKey
+
+                if (loginBack.code == 200) {
+
+                    GlobalDataManager.globalToken = loginBack.data.token
+                    GlobalDataManager.globalUserId = loginBack.data.userId
+                    GlobalDataManager.globalRoleKey = loginBack.data.roleKey
 
 
-                planIdInit()
+                    TipDialog.show("登录成功", WaitDialog.TYPE.SUCCESS);
 
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        val intent = Intent(this@LoginActivity, MainActivity::class.java)
+                        startActivity(intent)
+                        finish()
+                    }, 2000) // 延迟2秒跳转到首页
+
+                }
 
 
 
@@ -252,7 +220,7 @@ class LoginActivity : BaseActivity(), UpdateUtil.UpdateCallback {
             }
 
             override fun onFailure(call: Call<LoginBack>, t: Throwable) {
-                TipDialog.show("登录失败,请检查网络后重试", WaitDialog.TYPE.ERROR);
+                CrashReport.postCatchedException(t)
             }
         })
     }

@@ -26,6 +26,7 @@ import com.kongzue.dialogx.interfaces.OnBindView
 import com.kongzue.dialogx.style.IOSStyle
 import com.kongzue.dialogx.style.MIUIStyle
 import com.kongzue.dialogx.util.TextInfo
+import com.tencent.bugly.crashreport.CrashReport
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody
 import retrofit2.Call
@@ -71,13 +72,11 @@ class PersonFragment : Fragment() {
         api = GongXueYunServerCreator.create(ApiServer::class.java)
         myApi = MyServerCreator.create(MyApiServer::class.java)
 
-        try {
-            userInfoInit()
-            logoutInit()
-            onClickInit()
-        } catch (e: Exception) {
-            Log.d("检测", "onViewCreated: ${e.message}")
-        }
+
+        userInfoInit()
+        logoutInit()
+        onClickInit()
+
 
     }
 
@@ -133,55 +132,53 @@ class PersonFragment : Fragment() {
 
 
 
-                        try {
-                            Log.d(
-                                "检测",
-                                "onResponse: ${feedBackRequestBody}"
-                            )
 
-                            myApi.feedbackServer(feedBackRequestBody)
-                                .enqueue(object : Callback<FeedBackResponseBody> {
-                                    override fun onResponse(
-                                        p0: Call<FeedBackResponseBody>,
-                                        p1: Response<FeedBackResponseBody>
-                                    ) {
-                                        //打印日志
+                        Log.d(
+                            "检测",
+                            "onResponse: ${feedBackRequestBody}"
+                        )
 
-                                        Log.d(
-                                            "检测",
-                                            "onResponse: ${p1.body()}"
-                                        )
-                                        if (p1.body() != null) {
-                                            if (p1.code() == 200) {
-                                                TipDialog.show(
-                                                    "反馈成功",
-                                                    WaitDialog.TYPE.SUCCESS
-                                                )
-                                            } else {
-                                                TipDialog.show(
-                                                    "反馈失败",
-                                                    WaitDialog.TYPE.ERROR
-                                                )
-                                            }
+                        myApi.feedbackServer(feedBackRequestBody)
+                            .enqueue(object : Callback<FeedBackResponseBody> {
+                                override fun onResponse(
+                                    p0: Call<FeedBackResponseBody>,
+                                    p1: Response<FeedBackResponseBody>
+                                ) {
+                                    //打印日志
+
+                                    Log.d(
+                                        "检测",
+                                        "onResponse: ${p1.body()}"
+                                    )
+                                    if (p1.body() != null) {
+                                        if (p1.code() == 200) {
+                                            TipDialog.show(
+                                                "反馈成功",
+                                                WaitDialog.TYPE.SUCCESS
+                                            )
                                         } else {
                                             TipDialog.show(
-                                                "反馈失败,请联系管理员",
+                                                "反馈失败",
                                                 WaitDialog.TYPE.ERROR
                                             )
                                         }
-                                    }
-
-                                    override fun onFailure(p0: Call<FeedBackResponseBody>, p1: Throwable) {
+                                    } else {
                                         TipDialog.show(
-                                            "反馈失败,请检查网络后重试",
+                                            "反馈失败,请联系管理员",
                                             WaitDialog.TYPE.ERROR
                                         )
                                     }
+                                }
 
-                                })
-                        }   catch (e: Exception) {
-                            Log.d("检测", "onViewCreated: ${e.message}")
-                        }
+                                override fun onFailure(
+                                    p0: Call<FeedBackResponseBody>,
+                                    p1: Throwable
+                                ) {
+                                    CrashReport.postCatchedException(p1)
+                                }
+
+                            })
+
 
                     }
 
@@ -269,7 +266,8 @@ class PersonFragment : Fragment() {
                 }
 
                 override fun onFailure(p0: Call<GetMoGuDingUserInfoBack>, p1: Throwable) {
-                    TipDialog.show("个人信息加载失败", WaitDialog.TYPE.ERROR);
+                    CrashReport.postCatchedException(p1)
+
 
                 }
 
@@ -300,7 +298,8 @@ class PersonFragment : Fragment() {
                             }
 
                             override fun onFailure(p0: Call<LogoutBack>, p1: Throwable) {
-                                TipDialog.show("退出失败,请检查网络后重试", WaitDialog.TYPE.ERROR);
+                                CrashReport.postCatchedException(p1)
+
                             }
 
                         })

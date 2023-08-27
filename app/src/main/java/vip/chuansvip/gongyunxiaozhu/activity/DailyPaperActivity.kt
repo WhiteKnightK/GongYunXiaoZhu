@@ -1,6 +1,9 @@
 package vip.chuansvip.gongyunxiaozhu.activity
 
 import android.app.DatePickerDialog
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
@@ -17,6 +20,7 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.kongzue.dialogx.dialogs.BottomMenu
 import com.kongzue.dialogx.dialogs.MessageDialog
 import com.kongzue.dialogx.dialogs.PopMenu
+import com.kongzue.dialogx.dialogs.PopTip
 import com.kongzue.dialogx.dialogs.TipDialog
 import com.kongzue.dialogx.dialogs.WaitDialog
 import com.kongzue.dialogx.interfaces.BaseDialog
@@ -40,14 +44,19 @@ import vip.chuansvip.gongyunxiaozhu.util.EncryptionAndDecryptUtils
 import vip.chuansvip.gongyunxiaozhu.util.GlobalDataManager
 import vip.chuansvip.gongyunxiaozhu.util.SignUtil
 import com.kongzue.dialogx.interfaces.OnMenuItemSelectListener
+import com.tencent.bugly.crashreport.CrashReport
+import vip.chuansvip.gongyunxiaozhu.MyApplication
 import vip.chuansvip.gongyunxiaozhu.bean.BaseActivity
 import vip.chuansvip.gongyunxiaozhu.bean.GetPaperResponseBody
+import vip.chuansvip.gongyunxiaozhu.bean.GetPlanByStuBack
+import vip.chuansvip.gongyunxiaozhu.bean.GetPlanByStuRequestBody
 import vip.chuansvip.gongyunxiaozhu.bean.MonthPaperRequestBody
 import vip.chuansvip.gongyunxiaozhu.bean.WeekPaperRequestBody
 import vip.chuansvip.gongyunxiaozhu.network.MyApiServer
 import vip.chuansvip.gongyunxiaozhu.network.MyServerCreator
 import vip.chuansvip.gongyunxiaozhu.util.getAllWeeksSinceLastYear
 import vip.chuansvip.gongyunxiaozhu.util.getYearMonthRange
+import vip.chuansvip.gongyunxiaozhu.util.joinQQGroup
 import vip.chuansvip.gongyunxiaozhu.util.parseDateRange
 import java.time.LocalDate
 
@@ -69,6 +78,9 @@ class DailyPaperActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityDailyPaperBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        planIdInit()
+
         api = GongXueYunServerCreator.create(ApiServer::class.java)
         myApi = MyServerCreator.create(MyApiServer::class.java)
         signUtil = SignUtil()
@@ -103,6 +115,62 @@ class DailyPaperActivity : BaseActivity() {
 
     }
 
+    private fun planIdInit() {
+        val signUtil = SignUtil()
+        val sign = signUtil.getPlanByStuSign()
+        val api = GongXueYunServerCreator.create(ApiServer::class.java)
+        val body = GetPlanByStuRequestBody()
+        api.getPlanByStuServer(
+            GlobalDataManager.globalToken,
+            GlobalDataManager.globalRoleKey,
+            sign,
+            body
+        ).enqueue(object : Callback<GetPlanByStuBack> {
+            override fun onResponse(p0: Call<GetPlanByStuBack>, p1: Response<GetPlanByStuBack>) {
+                if (p1.body() == null) {
+                    return
+                }
+                Log.d("检测", "onResponse:  ${p1.body()}")
+                if (p1.body()!!.msg == "token失效") {
+                    val intent = Intent("com.example.broadcastbestpractice.FORCE_OFFLINE")
+                    MyApplication.context!!.sendBroadcast(intent)
+                } else {
+
+                    val data = p1.body()?.data
+                    //判断planId planName是否为空
+                    if (data?.get(0)?.planId == null || data?.get(0)?.planName == null) {
+                        if (data?.get(0)?.planId == null) {
+                            TipDialog.show("planId为空", WaitDialog.TYPE.ERROR)
+                        }else{
+                            TipDialog.show("planName为空", WaitDialog.TYPE.ERROR)
+                        }
+
+                        //详细一点
+                        return
+                    }
+                    GlobalDataManager.globalPlanId = data[0].planId.toString()
+                    planName = data[0].planName.toString()
+                    binding.tvInternshipProgram.text = planName
+
+
+
+
+//                Log.d("检测", "PlanId:  ${data?.get(0)?.planId.toString()}")
+
+                }
+
+            }
+
+            override fun onFailure(call: Call<GetPlanByStuBack>, throwable: Throwable) {
+//                TipDialog.show("getPlanByStuServer请求异常", WaitDialog.TYPE.ERROR)
+//                makeDebugDialogThrowable(this@LoginActivity, throwable)
+                CrashReport.postCatchedException(throwable)
+            }
+
+
+        })
+    }
+
     private fun onClickInit() {
         binding.btnFillInOneClick.setOnClickListener {
             var type = 1
@@ -131,11 +199,7 @@ class DailyPaperActivity : BaseActivity() {
                 }
 
                 override fun onFailure(p0: Call<GetPaperResponseBody>, p1: Throwable) {
-                    TipDialog.show(
-                        this@DailyPaperActivity,
-                        "获取失败,请检查网络后重试",
-                        WaitDialog.TYPE.ERROR
-                    )
+                    CrashReport.postCatchedException(p1)
                 }
 
             })
@@ -173,7 +237,7 @@ class DailyPaperActivity : BaseActivity() {
 
         })
 
-        binding.tvInternshipProgram.text = planName
+
         when (pageType) {
             "day" -> {
                 binding.tvWeeks.visibility = View.GONE
@@ -339,7 +403,7 @@ class DailyPaperActivity : BaseActivity() {
             }
 
             override fun onFailure(p0: Call<ListByStuBack>, p1: Throwable) {
-                TipDialog.show("提交失败，请检查网络", WaitDialog.TYPE.ERROR)
+                CrashReport.postCatchedException(p1)
             }
 
         })
@@ -418,7 +482,7 @@ class DailyPaperActivity : BaseActivity() {
                                 }
 
                                 override fun onFailure(p0: Call<LoginBack>, p1: Throwable) {
-                                    TipDialog.show("提交失败，请检查网络", WaitDialog.TYPE.ERROR)
+                                    CrashReport.postCatchedException(p1)
 
                                 }
 
@@ -474,7 +538,7 @@ class DailyPaperActivity : BaseActivity() {
                                 }
 
                                 override fun onFailure(p0: Call<LoginBack>, p1: Throwable) {
-
+                                    CrashReport.postCatchedException(p1)
                                 }
 
                             })
@@ -522,7 +586,7 @@ class DailyPaperActivity : BaseActivity() {
                                 }
 
                                 override fun onFailure(p0: Call<LoginBack>, p1: Throwable) {
-
+                                    CrashReport.postCatchedException(p1)
                                 }
 
                             })

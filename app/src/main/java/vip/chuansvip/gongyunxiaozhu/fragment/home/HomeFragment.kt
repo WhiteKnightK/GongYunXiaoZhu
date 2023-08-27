@@ -13,6 +13,7 @@ import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestOptions
 import com.kongzue.dialogx.dialogs.TipDialog
 import com.kongzue.dialogx.dialogs.WaitDialog
+import com.tencent.bugly.crashreport.CrashReport
 import com.youth.banner.adapter.BannerImageAdapter
 import com.youth.banner.holder.BannerImageHolder
 import retrofit2.Call
@@ -64,7 +65,7 @@ class HomeFragment : Fragment() {
             }
 
             override fun onFailure(p0: Call<AppServer>, p1: Throwable) {
-                TipDialog.show("加载失败,请检查网络后重试", WaitDialog.TYPE.ERROR);
+                CrashReport.postCatchedException(p1)
             }
 
         })
@@ -131,7 +132,7 @@ class HomeFragment : Fragment() {
             }
 
             override fun onFailure(p0: Call<AppBannerInfo>, p1: Throwable) {
-                TipDialog.show("加载失败,请检查网络后重试", WaitDialog.TYPE.ERROR);
+                CrashReport.postCatchedException(p1)
 
             }
 

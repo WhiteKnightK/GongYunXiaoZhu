@@ -37,16 +37,14 @@ class MainActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        try {
+
 
 
             mainInit(savedInstanceState)
 
             globalVariableStorage()
 
-        }catch (e:Exception){
-            makeDebugDialog(this,e)
-        }
+
     }
 
     private fun globalVariableStorage() {
