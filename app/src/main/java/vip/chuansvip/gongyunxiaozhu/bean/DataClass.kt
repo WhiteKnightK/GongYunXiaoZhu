@@ -524,6 +524,23 @@ data class SignInResponseBodyData(
     val attendanceId: String,
     val createTime: String
 )
+
+data class AttachmentsSignInRequestBody(
+    val address: String,
+    val attachments: String,
+    val city: String,
+    val country: String,
+    val description: String,
+    val device: String,
+    val latitude: String,
+    val longitude: String,
+    val planId: String,
+    val province: String,
+    val t: String,
+    val type: String
+)
+
+
 data class SignInListSynchroRequestBody(
 
     val startTime: String,

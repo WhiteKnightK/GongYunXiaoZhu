@@ -1,22 +1,32 @@
 package vip.chuansvip.gongyunxiaozhu.activity
 
+import android.Manifest
+import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.os.Bundle
+import android.provider.MediaStore
 import android.util.Log
 import android.view.Gravity
 import android.view.View
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.app.ActivityCompat
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
+import com.bumptech.glide.Glide
 import com.kongzue.dialogx.datepicker.CalendarDialog
 import com.kongzue.dialogx.datepicker.interfaces.OnDateSelected
+import com.kongzue.dialogx.dialogs.BottomMenu
 import com.kongzue.dialogx.dialogs.MessageDialog
 import com.kongzue.dialogx.dialogs.PopMenu
 import com.kongzue.dialogx.dialogs.PopTip
 import com.kongzue.dialogx.dialogs.TipDialog
 import com.kongzue.dialogx.dialogs.WaitDialog
+import com.kongzue.dialogx.interfaces.OnMenuItemClickListener
+import com.permissionx.guolindev.PermissionX
 import com.tencent.bugly.crashreport.CrashReport
 import retrofit2.Call
 import retrofit2.Callback
@@ -92,11 +102,54 @@ class SignInActivity : BaseActivity() {
         Log.d("检测", "result: ${result.data}")
     }
 
+    val photoAlbumLaunch = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        val data: Intent? = it.data // 获取相册返回的 Intent 数据
+        //输出data
+//        Log.d("检测", "data: $data")
+        if (data != null && data.data != null) {
+            val imageUri = data.data
+
+                val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, imageUri)
+//                binding.btnAddImg.setImageBitmap(bitmap)
+            Glide.with(this).load(bitmap).into(binding.btnAddImg)
+                // 使用得到的 bitmap 进行后续处理
+
+        }
+    }
+
+    val cameraLaunch = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        val data: Intent? = it.data // 获取相册返回的 Intent 数据
+//        //输出data
+////        Log.d("检测", "data: $data")
+//        if (data != null && data.data != null) {
+//            val imageUri = data.data
+//
+//            val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, imageUri)
+////                binding.btnAddImg.setImageBitmap(bitmap)
+//            Glide.with(this).load(bitmap).into(binding.btnAddImg)
+            // 使用得到的 bitmap 进行后续处理
+
+        //处理相机返回的数据
+
+        if ( it.resultCode == Activity.RESULT_OK) {
+            // 获取拍摄的照片
+            val imageBitmap = data?.extras?.get("data") as? Bitmap
+            // 将照片显示在 ImageView 中
+            Glide.with(this).load(imageBitmap).into(binding.btnAddImg)
+        }
+
+
+    }
+
+
+
     var isRewindSignIn = false
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivitySignInBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+
 
         planIdInit()
 
@@ -131,8 +184,8 @@ class SignInActivity : BaseActivity() {
                 }
                 Log.d("检测", "onResponse:  ${p1.body()}")
                 if (p1.body()!!.msg == "token失效") {
-                    val intent = Intent("com.example.broadcastbestpractice.FORCE_OFFLINE")
-                    MyApplication.context!!.sendBroadcast(intent)
+//                    val intent = Intent("com.example.broadcastbestpractice.FORCE_OFFLINE")
+//                    MyApplication.context!!.sendBroadcast(intent)
                 } else {
 
                     val data = p1.body()?.data
@@ -195,8 +248,8 @@ class SignInActivity : BaseActivity() {
 //                    return
 //                }
                 if (p1.body()!!.msg == "token失效") {
-                    val intent = Intent("com.example.broadcastbestpractice.FORCE_OFFLINE")
-                    sendBroadcast(intent)
+//                    val intent = Intent("com.example.broadcastbestpractice.FORCE_OFFLINE")
+//                    sendBroadcast(intent)
                 }
                 //判空
                 if (p1.body() == null) {
@@ -230,7 +283,100 @@ class SignInActivity : BaseActivity() {
         })
     }
 
+    private fun initPermission() {
+        PermissionX.init(this)
+            .permissions(
+
+                Manifest.permission.CAMERA
+            )
+            .onExplainRequestReason { scope, deniedList ->
+                val message = "APP需要您同意以下权限才能正常使用"
+                scope.showRequestReasonDialog(deniedList, message, "允许", "取消")
+            }
+            .onForwardToSettings { scope, deniedList ->
+                // 判断用户是否手动开启了权限
+                if (PermissionX.isGranted(
+                        this@SignInActivity,
+                        Manifest.permission.CAMERA
+
+                    )
+                ) {
+                    Toast.makeText(
+                        this@SignInActivity,
+                        "您已经开启了权限，但应用可能需要重新启动",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    scope.showForwardToSettingsDialog(
+                        deniedList,
+                        "您需要去应用程序设置当中手动开启权限",
+                        "去设置",
+                        "退出"
+                    )
+                }
+            }
+            .request { allGranted, _, deniedList ->
+                if (allGranted) {
+                    haveCameraPermission = true
+                    requestCameraPermission() // 在这里调用获取位置服务方法
+                } else {
+                    haveCameraPermission = false
+                    Toast.makeText(this, "您拒绝了如下权限：$deniedList", Toast.LENGTH_SHORT).show()
+                    System.exit(0)
+                }
+            }
+    }
+
+    private var haveCameraPermission = false
+
+    //获取相机权限的方法
+    private fun requestCameraPermission() {
+        ActivityCompat.requestPermissions(
+            this,
+            arrayOf(Manifest.permission.CAMERA),
+            1
+        )
+    }
+
+
+
     private fun onClickInit() {
+
+        binding.btnAddImg.setOnClickListener {
+            BottomMenu.show(arrayOf("拍摄", "从相册选择"))
+                .setMessage("这里是标题")
+                .setCancelButton("取消")
+                .setOnMenuItemClickListener(object : OnMenuItemClickListener<BottomMenu> {
+                    override fun onClick(
+                        dialog: BottomMenu?,
+                        text: CharSequence?,
+                        index: Int
+                    ): Boolean {
+                        if (index == 0){
+                            //调用相机
+
+                            initPermission()
+                            if (!haveCameraPermission) {
+                                return false
+                            }
+                            val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+                           cameraLaunch.launch(intent)
+
+
+
+                        }
+                        if (index == 1){
+                            //调用相册
+                            val intent = Intent(Intent.ACTION_PICK)
+                            intent.type = "image/*"
+                            photoAlbumLaunch.launch(intent)
+                        }
+                        return false
+                    }
+
+                })
+        }
+
         binding.tvSignDateContent.setOnClickListener {
             CalendarDialog.build()
                 .show(object : OnDateSelected() {

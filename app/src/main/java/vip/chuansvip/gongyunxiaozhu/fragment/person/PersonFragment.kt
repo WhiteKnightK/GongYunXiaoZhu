@@ -1,6 +1,9 @@
 package vip.chuansvip.gongyunxiaozhu.fragment.person
 
 import TimeStampConverter
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Context.INPUT_METHOD_SERVICE
 import android.content.Intent
 import android.graphics.Color
@@ -49,6 +52,7 @@ import vip.chuansvip.gongyunxiaozhu.network.MyApiServer
 import vip.chuansvip.gongyunxiaozhu.network.MyServerCreator
 import vip.chuansvip.gongyunxiaozhu.util.EncryptionAndDecryptUtils
 import vip.chuansvip.gongyunxiaozhu.util.GlobalDataManager
+import vip.chuansvip.gongyunxiaozhu.util.joinQQGroup
 
 
 class PersonFragment : Fragment() {
@@ -239,8 +243,33 @@ class PersonFragment : Fragment() {
 
                     val orgEntity = userInfo.orgEntity
 
+
+                    //判空
+                    if (orgEntity == null && context != null) {
+                        MessageDialog.show(
+                            "异常，orgEntity为空，点击确定将异常信息发送给管理员",
+                            userInfo.toString(),
+                            "确定"
+                        )
+                            .setOkButtonClickListener { baseDialog, v ->
+                                val clipboard =
+                                    context!!.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                val clipData =
+                                    ClipData.newPlainText("text", userInfo.toString())
+                                clipboard.setPrimaryClip(clipData)
+                                PopTip.show("报错信息复制成功")
+
+                                joinQQGroup("kEfI5W8unKVYRSpvMWBvhJICiBPYZPfC", context!!)
+                                false
+                            }
+                            .setCancelable(false)
+                        return
+                    }
+
                     //加载到页面上
+
                     binding.tvLikeName.text = userInfo.nikeName
+
                     binding.tvPhone.text = "账号：${userInfo.phone}"
                     binding.tvSchoolName.text = orgEntity.schoolName
                     binding.tvDepName.text = orgEntity.depName

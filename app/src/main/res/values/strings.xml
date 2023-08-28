@@ -66,6 +66,7 @@
     <string name="App_version">App版本</string>
     <string name="Questions_and_suggestions_feedback">问题与建议反馈</string>
     <string name="fill_in_one_click">一键填充</string>
+    <string name="img_attachment">图片附件</string>
 
 
 </resources>

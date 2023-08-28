@@ -2,30 +2,15 @@ package vip.chuansvip.gongyunxiaozhu.activity
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
-import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
-import com.kongzue.dialogx.dialogs.BottomMenu
-import com.kongzue.dialogx.dialogs.TipDialog
-import com.kongzue.dialogx.dialogs.WaitDialog
-import com.kongzue.dialogx.interfaces.OnMenuItemSelectListener
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
-import vip.chuansvip.gongyunxiaozhu.MyApplication.Companion.context
 import vip.chuansvip.gongyunxiaozhu.R
 import vip.chuansvip.gongyunxiaozhu.bean.BaseActivity
-import vip.chuansvip.gongyunxiaozhu.bean.GetPlanByStuBack
-import vip.chuansvip.gongyunxiaozhu.bean.GetPlanByStuRequestBody
 import vip.chuansvip.gongyunxiaozhu.databinding.ActivityMainBinding
 import vip.chuansvip.gongyunxiaozhu.fragment.home.HomeFragment
 import vip.chuansvip.gongyunxiaozhu.fragment.person.PersonFragment
-import vip.chuansvip.gongyunxiaozhu.network.ApiServer
-import vip.chuansvip.gongyunxiaozhu.network.GongXueYunServerCreator
 import vip.chuansvip.gongyunxiaozhu.util.GlobalDataManager
 import vip.chuansvip.gongyunxiaozhu.util.SharedPrefsKeys
-import vip.chuansvip.gongyunxiaozhu.util.SignUtil
-import vip.chuansvip.gongyunxiaozhu.util.makeDebugDialog
+
 
 class MainActivity : BaseActivity() {
     private lateinit var binding: ActivityMainBinding
@@ -65,26 +50,24 @@ class MainActivity : BaseActivity() {
 
 
 
+
     private fun mainInit(savedInstanceState: Bundle?) {
         if (savedInstanceState == null) {
-            // 初始化 Fragment 实例
             homeFragment = HomeFragment()
-
             currentFragment = homeFragment
-
-            // 默认显示 HomeFragment
             showFragment(homeFragment)
         }
 
         binding.expandableBottomBar.onItemSelectedListener = { _, menuItem, _ ->
             when (menuItem.id) {
                 R.id.home -> {
-                    homeFragment = HomeFragment()
                     showFragment(homeFragment)
                 }
 
                 R.id.person -> {
-                    personFragment = PersonFragment()
+                    if (!::personFragment.isInitialized) {
+                        personFragment = PersonFragment()
+                    }
                     showFragment(personFragment)
                 }
             }
@@ -106,7 +89,6 @@ class MainActivity : BaseActivity() {
             commitAllowingStateLoss()
         }
     }
-
     fun logout() {
         GlobalDataManager.globalToken = ""
         GlobalDataManager.globalRoleKey = ""
