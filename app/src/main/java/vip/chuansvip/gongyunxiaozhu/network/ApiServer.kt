@@ -19,6 +19,8 @@ import vip.chuansvip.gongyunxiaozhu.bean.GetPaperResponseBody
 import vip.chuansvip.gongyunxiaozhu.bean.GetPaperResponseBodyData
 import vip.chuansvip.gongyunxiaozhu.bean.GetPlanByStuBack
 import vip.chuansvip.gongyunxiaozhu.bean.GetPlanByStuRequestBody
+import vip.chuansvip.gongyunxiaozhu.bean.GetUploadTokenRequestBody
+import vip.chuansvip.gongyunxiaozhu.bean.GetUploadTokenResponseBody
 import vip.chuansvip.gongyunxiaozhu.bean.ListByStuBack
 import vip.chuansvip.gongyunxiaozhu.bean.ListByStuResRequestBody
 import vip.chuansvip.gongyunxiaozhu.bean.LoginBack
@@ -53,13 +55,16 @@ interface ApiServer {
     fun listByStuServer(@Header("Authorization") token:String,@Header("Sign") sign:String,@Header("Rolekey") rolekey:String,@Body listByStuResRequestBody: ListByStuResRequestBody) : Call<ListByStuBack>
 
     @POST("/attendence/clock/v2/save")
-    fun signInServer(@Header("Authorization") token:String,@Header("Sign") sign:String,@Header("Rolekey") rolekey:String,@Body SignInRequestBody: SignInRequestBody ) : Call<SignInResponseBody>
+    fun signInServer(@Header("Authorization") token:String,@Header("Sign") sign:String,@Header("Rolekey") rolekey:String,@Body SignInRequestBody: Any ) : Call<SignInResponseBody>
 
     @POST("attendence/clock/v1/listSynchro")
     fun getSignInListServer(@Header("Authorization") token:String,@Header("Rolekey") rolekey:String,@Body signInListSynchroRequestBody: SignInListSynchroRequestBody ) : Call<SignInListSynchroResponseBody>
 
     @POST("/attendence/attendanceReplace/v2/save")
-    fun rewindSignInServer(@Header("Authorization") token:String,@Header("Sign") sign:String,@Header("Rolekey") rolekey:String,@Body rewindSignInRequestBody: RewindSignInRequestBody ) : Call<RewindSignInResponseBody>
+    fun rewindSignInServer(@Header("Authorization") token:String,@Header("Sign") sign:String,@Header("Rolekey") rolekey:String,@Body rewindSignInRequestBody: Any ) : Call<RewindSignInResponseBody>
+
+    @POST("/session/upload/v1/token")
+    fun getUploadTokenServer(@Header("Authorization") token:String,@Header("Rolekey") rolekey:String,@Body requestBody:GetUploadTokenRequestBody) : Call<GetUploadTokenResponseBody>
 
 
 }

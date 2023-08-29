@@ -1,9 +1,8 @@
 package vip.chuansvip.gongyunxiaozhu.activity
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -20,7 +19,6 @@ import com.bumptech.glide.Glide
 import com.kongzue.dialogx.datepicker.CalendarDialog
 import com.kongzue.dialogx.datepicker.interfaces.OnDateSelected
 import com.kongzue.dialogx.dialogs.BottomMenu
-import com.kongzue.dialogx.dialogs.MessageDialog
 import com.kongzue.dialogx.dialogs.PopMenu
 import com.kongzue.dialogx.dialogs.PopTip
 import com.kongzue.dialogx.dialogs.TipDialog
@@ -33,9 +31,13 @@ import retrofit2.Callback
 import retrofit2.Response
 import vip.chuansvip.gongyunxiaozhu.MyApplication
 import vip.chuansvip.gongyunxiaozhu.adapter.SignInListAdapter
+import vip.chuansvip.gongyunxiaozhu.bean.AttachmentRewindSignInRequestBody
+import vip.chuansvip.gongyunxiaozhu.bean.AttachmentsSignInRequestBody
 import vip.chuansvip.gongyunxiaozhu.bean.BaseActivity
 import vip.chuansvip.gongyunxiaozhu.bean.GetPlanByStuBack
 import vip.chuansvip.gongyunxiaozhu.bean.GetPlanByStuRequestBody
+import vip.chuansvip.gongyunxiaozhu.bean.GetUploadTokenRequestBody
+import vip.chuansvip.gongyunxiaozhu.bean.GetUploadTokenResponseBody
 import vip.chuansvip.gongyunxiaozhu.bean.LocationInfo
 import vip.chuansvip.gongyunxiaozhu.bean.RewindSignInRequestBody
 import vip.chuansvip.gongyunxiaozhu.bean.RewindSignInResponseBody
@@ -43,17 +45,19 @@ import vip.chuansvip.gongyunxiaozhu.bean.SignInListSynchroRequestBody
 import vip.chuansvip.gongyunxiaozhu.bean.SignInListSynchroResponseBody
 import vip.chuansvip.gongyunxiaozhu.bean.SignInRequestBody
 import vip.chuansvip.gongyunxiaozhu.bean.SignInResponseBody
+import vip.chuansvip.gongyunxiaozhu.bean.UploadingImgResponseBody
 import vip.chuansvip.gongyunxiaozhu.databinding.ActivitySignInBinding
 import vip.chuansvip.gongyunxiaozhu.network.ApiServer
 import vip.chuansvip.gongyunxiaozhu.network.GongXueYunServerCreator
 import vip.chuansvip.gongyunxiaozhu.util.EncryptionAndDecryptUtils
 import vip.chuansvip.gongyunxiaozhu.util.GlobalDataManager
+import vip.chuansvip.gongyunxiaozhu.util.SignInImgUtil
 import vip.chuansvip.gongyunxiaozhu.util.SignUtil
 import vip.chuansvip.gongyunxiaozhu.util.isAfterToday
 import vip.chuansvip.gongyunxiaozhu.util.isBeforeToday
-import vip.chuansvip.gongyunxiaozhu.util.joinQQGroup
 
-class SignInActivity : BaseActivity() {
+
+class SignInActivity : BaseActivity(), SignInImgUtil.SignInImgCallback {
     lateinit var binding: ActivitySignInBinding
 
     companion object {
@@ -64,6 +68,9 @@ class SignInActivity : BaseActivity() {
     private var locationInfo = LocationInfo()
     lateinit var api: ApiServer
 
+    var imgAttachmentBitmap: Bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+
+    @SuppressLint("SetTextI18n")
     val mapLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -73,12 +80,35 @@ class SignInActivity : BaseActivity() {
             val receivedBundle = result.data!!.extras
             Log.d("intent检查", "$receivedBundle")
             val name = receivedBundle?.getString("name")
-            val address = receivedBundle?.getString("address")
-            val province = receivedBundle?.getString("province")
-            val city = receivedBundle?.getString("city")
-            val district = receivedBundle?.getString("district")
+            var address = receivedBundle?.getString("address")
+            var province = receivedBundle?.getString("province")
+            var city = receivedBundle?.getString("city")
+            var district = receivedBundle?.getString("district")
             val latitude = receivedBundle?.getString("latitude")
             val longitude = receivedBundle?.getString("longitude")
+
+
+
+            if (province.toString() == city.toString() && city.toString() == district.toString()) {
+                val regex =
+                    Regex("(.*?省|.*?自治区|.*?市)(.*?市|.*?自治州|.*?地区)?(.*?区|.*?县|.*?市|.*?自治县|.*?自治区)?")
+                val matchResult = regex.find(province.toString())
+
+                province = matchResult!!.groupValues[1]
+                city = matchResult.groupValues[2]
+                district = matchResult.groupValues[3]
+                //判断一下省有没有包含市
+                if (city == ""){
+                    city = province
+                    province = city.replace("市","")
+                }
+
+
+                println("省: $province")
+                println("市: $city")
+                println("区/县: $district")
+
+            }
 
 
             locationInfo.name = name.toString()
@@ -95,52 +125,63 @@ class SignInActivity : BaseActivity() {
                 "intent检查",
                 "---${locationInfo.province}  ${locationInfo.city}  ${locationInfo.district}---  "
             )
+            Toast.makeText(
+                this,
+                "---${locationInfo.province}  ${locationInfo.city}  ${locationInfo.district}---",
+                Toast.LENGTH_SHORT
+            ).show()
 
 
-            binding.tvSignAddressContent.text = address
+            address = address!!.replace(province.toString(), "").replace(city.toString(), "")
+                .replace(district.toString(), "")
+
+            binding.tvSignAddressContent.text =
+                province.toString() + "·" + city.toString() + "·" + district.toString() + "·" + address
         }
         Log.d("检测", "result: ${result.data}")
     }
 
-    val photoAlbumLaunch = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        val data: Intent? = it.data // 获取相册返回的 Intent 数据
-        //输出data
+    val photoAlbumLaunch =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            val data: Intent? = it.data // 获取相册返回的 Intent 数据
+            //输出data
 //        Log.d("检测", "data: $data")
-        if (data != null && data.data != null) {
-            val imageUri = data.data
+            if (data != null && data.data != null) {
+                val imageUri = data.data
+                //日志输出
+                Log.d("检测", "imageUri: $imageUri")
 
                 val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, imageUri)
-//                binding.btnAddImg.setImageBitmap(bitmap)
-            Glide.with(this).load(bitmap).into(binding.btnAddImg)
+                imgAttachmentBitmap = bitmap
+
+
+
+                Glide.with(this).load(bitmap).into(binding.btnAddImg)
                 // 使用得到的 bitmap 进行后续处理
 
+            }
         }
-    }
 
     val cameraLaunch = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         val data: Intent? = it.data // 获取相册返回的 Intent 数据
-//        //输出data
-////        Log.d("检测", "data: $data")
-//        if (data != null && data.data != null) {
-//            val imageUri = data.data
-//
-//            val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, imageUri)
-////                binding.btnAddImg.setImageBitmap(bitmap)
-//            Glide.with(this).load(bitmap).into(binding.btnAddImg)
-            // 使用得到的 bitmap 进行后续处理
 
         //处理相机返回的数据
 
-        if ( it.resultCode == Activity.RESULT_OK) {
+        if (it.resultCode == Activity.RESULT_OK) {
             // 获取拍摄的照片
             val imageBitmap = data?.extras?.get("data") as? Bitmap
-            // 将照片显示在 ImageView 中
-            Glide.with(this).load(imageBitmap).into(binding.btnAddImg)
+            if (imageBitmap != null) {
+                // 将照片显示在 ImageView 中
+                Glide.with(this).load(imageBitmap).into(binding.btnAddImg)
+                Log.d("检测", "imageData: ${data.extras?.get("data")}")
+                imgAttachmentBitmap = imageBitmap
+            }
+
+
         }
 
 
     }
-
 
 
     var isRewindSignIn = false
@@ -184,8 +225,8 @@ class SignInActivity : BaseActivity() {
                 }
                 Log.d("检测", "onResponse:  ${p1.body()}")
                 if (p1.body()!!.msg == "token失效") {
-//                    val intent = Intent("com.example.broadcastbestpractice.FORCE_OFFLINE")
-//                    MyApplication.context!!.sendBroadcast(intent)
+                    val intent = Intent("com.example.broadcastbestpractice.FORCE_OFFLINE")
+                    MyApplication.context!!.sendBroadcast(intent)
                 } else {
 
                     val data = p1.body()?.data
@@ -248,8 +289,8 @@ class SignInActivity : BaseActivity() {
 //                    return
 //                }
                 if (p1.body()!!.msg == "token失效") {
-//                    val intent = Intent("com.example.broadcastbestpractice.FORCE_OFFLINE")
-//                    sendBroadcast(intent)
+                    val intent = Intent("com.example.broadcastbestpractice.FORCE_OFFLINE")
+                    sendBroadcast(intent)
                 }
                 //判空
                 if (p1.body() == null) {
@@ -339,7 +380,6 @@ class SignInActivity : BaseActivity() {
     }
 
 
-
     private fun onClickInit() {
 
         binding.btnAddImg.setOnClickListener {
@@ -352,7 +392,7 @@ class SignInActivity : BaseActivity() {
                         text: CharSequence?,
                         index: Int
                     ): Boolean {
-                        if (index == 0){
+                        if (index == 0) {
                             //调用相机
 
                             initPermission()
@@ -360,12 +400,11 @@ class SignInActivity : BaseActivity() {
                                 return false
                             }
                             val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-                           cameraLaunch.launch(intent)
-
+                            cameraLaunch.launch(intent)
 
 
                         }
-                        if (index == 1){
+                        if (index == 1) {
                             //调用相册
                             val intent = Intent(Intent.ACTION_PICK)
                             intent.type = "image/*"
@@ -393,12 +432,12 @@ class SignInActivity : BaseActivity() {
                         //写一个方法，判断是否大于今天
                         val isAfterToday = isAfterToday(year, month, day)
                         if (isAfterToday) {
-                            TipDialog.show("选择的日期不能晚于今天!", WaitDialog.TYPE.ERROR);
+                            TipDialog.show("选择的日期不能晚于今天!", WaitDialog.TYPE.ERROR)
                             return
                         } else {
                             val isBeforeToday = isBeforeToday(year, month, day)
                             if (isBeforeToday) {
-                                PopTip.show("已进入补签模式...");
+                                PopTip.show("已进入补签模式...")
                             }
                             isRewindSignIn = isBeforeToday
                             listSynchroInit(year.toString(), month.toString(), day.toString())
@@ -440,10 +479,63 @@ class SignInActivity : BaseActivity() {
         }
 
         binding.btnSign.setOnClickListener {
+
+//           //判断是否设置了图片附件     var imgAttachmentBitmap: Bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+            if (imgAttachmentBitmap.width == 1) {
+                Log.d("图片提交结果", "onClickInit: 未设置图片")
+
+            } else {
+                Log.d("图片提交结果", "onClickInit: 设置了图片")
+
+                //获取当前时间戳
+                val encryptionAndDecryptUtils = EncryptionAndDecryptUtils()
+                val currentTimeMillis = System.currentTimeMillis()
+                val t = encryptionAndDecryptUtils.encryptAndPrint(currentTimeMillis.toString())
+
+                val getUploadTokenRequestBody = GetUploadTokenRequestBody(
+                    t
+                )
+                api.getUploadTokenServer(
+                    GlobalDataManager.globalToken,
+                    GlobalDataManager.globalRoleKey,
+                    getUploadTokenRequestBody
+                ).enqueue(object : Callback<GetUploadTokenResponseBody> {
+                    override fun onResponse(
+                        p0: Call<GetUploadTokenResponseBody>,
+                        p1: Response<GetUploadTokenResponseBody>
+                    ) {
+                        val body = p1.body() ?: return
+
+                        val uploadToken = body.data
+
+                        val signInImgUtil = SignInImgUtil()
+                        signInImgUtil.uploadingImg(
+                            uploadToken,
+                            imgAttachmentBitmap,
+                            this@SignInActivity
+                        )
+
+
+                    }
+
+                    override fun onFailure(p0: Call<GetUploadTokenResponseBody>, p1: Throwable) {
+                        CrashReport.postCatchedException(p1)
+                    }
+
+                })
+
+                return@setOnClickListener
+
+
+//               uploadingImg("3xpTTKkV0RPP6CdkurGtmx9hN_fHG0fQEDB2iHH9:ruQ9sLTBpeniCDrcsxmWarxmyac=:eyJzY29wZSI6Im1vZ3VhcHAiLCJtaW1lTGltaXQiOiJpbWFnZS9qcGVnO2ltYWdlL3BuZztpbWFnZS93ZWJwO2FwcGxpY2F0aW9uL21zd29yZDthcHBsaWNhdGlvbi92bmQub3BlbnhtbGZvcm1hdHMtb2ZmaWNlZG9jdW1lbnQud29yZHByb2Nlc3NpbmdtbC5kb2N1bWVudDthcHBsaWNhdGlvbi92bmQubXMtZXhjZWw7YXBwbGljYXRpb24vdm5kLm9wZW54bWxmb3JtYXRzLW9mZmljZWRvY3VtZW50LnNwcmVhZHNoZWV0bWwuc2hlZXQ7YXBwbGljYXRpb24vdm5kLm9wZW54bWxmb3JtYXRzLW9mZmljZWRvY3VtZW50LnByZXNlbnRhdGlvbm1sLnByZXNlbnRhdGlvbjthcHBsaWNhdGlvbi9wZGY7YXBwbGljYXRpb24vdm5kLm1zLXBvd2VycG9pbnQ7YXBwbGljYXRpb24vemlwO2FwcGxpY2F0aW9uL3gtcmFyO2FwcGxpY2F0aW9uL3gtcmFyLWNvbXByZXNzZWQ7YXBwbGljYXRpb24veC16aXAtY29tcHJlc3NlZDthcHBsaWNhdGlvbi9vY3RldC1zdHJlYW07YXBwbGljYXRpb24veC1vbGUtc3RvcmFnZSIsImRlYWRsaW5lIjoxNjkzMzA2MzUzfQ==",imgAttachmentBitmap)
+
+            }
+
+
             //判断是否为空
             val address = binding.tvSignAddressContent.text.toString()
             if (locationInfo.latitude == "0.0" || locationInfo.longitude == "0.0" || address == "") {
-                TipDialog.show("请先选择打卡地址!", WaitDialog.TYPE.ERROR);
+                TipDialog.show("请先选择打卡地址!", WaitDialog.TYPE.ERROR)
             }
 
             val typeText = binding.tvSignTypeContent.text.toString().trim()
@@ -496,7 +588,7 @@ class SignInActivity : BaseActivity() {
                         val signInResponseBody = p1.body()
                         if (signInResponseBody != null) {
                             if (signInResponseBody.code == 200) {
-                                TipDialog.show("打卡成功!", WaitDialog.TYPE.SUCCESS);
+                                TipDialog.show("打卡成功!", WaitDialog.TYPE.SUCCESS)
                                 val date = java.util.Calendar.getInstance()
                                 val year = date.get(java.util.Calendar.YEAR)
                                 val month = date.get(java.util.Calendar.MONTH) + 1
@@ -507,7 +599,7 @@ class SignInActivity : BaseActivity() {
                                     day.toString()
                                 )
                             } else {
-                                TipDialog.show(signInResponseBody.msg, WaitDialog.TYPE.ERROR);
+                                TipDialog.show(signInResponseBody.msg, WaitDialog.TYPE.ERROR)
                             }
                         }
                     }
@@ -561,7 +653,7 @@ class SignInActivity : BaseActivity() {
                         val rewindSignInResponseBody = p1.body()
                         if (rewindSignInResponseBody != null) {
                             if (rewindSignInResponseBody.code == 200) {
-                                TipDialog.show("打卡成功!", WaitDialog.TYPE.SUCCESS);
+                                TipDialog.show("打卡成功!", WaitDialog.TYPE.SUCCESS)
                                 val date = java.util.Calendar.getInstance()
                                 val year = date.get(java.util.Calendar.YEAR)
                                 val month = date.get(java.util.Calendar.MONTH) + 1
@@ -572,7 +664,7 @@ class SignInActivity : BaseActivity() {
                                     day.toString()
                                 )
                             } else {
-                                TipDialog.show(rewindSignInResponseBody.msg, WaitDialog.TYPE.ERROR);
+                                TipDialog.show(rewindSignInResponseBody.msg, WaitDialog.TYPE.ERROR)
                             }
                         }
                     }
@@ -583,6 +675,8 @@ class SignInActivity : BaseActivity() {
 
                 })
             }
+
+
         }
     }
 
@@ -653,5 +747,152 @@ class SignInActivity : BaseActivity() {
 
     fun returnHome(view: View) {
         finish()
+    }
+
+    override fun onSignInImgComplete(uploadingImgResponseBody: UploadingImgResponseBody) {
+        //判断是否为空
+        Log.d("地址检测", "onSignInImgComplete:${uploadingImgResponseBody.key}")
+
+       val key = uploadingImgResponseBody.key.replace("upload/", "")
+
+
+        val address = binding.tvSignAddressContent.text.toString()
+        if (locationInfo.latitude == "0.0" || locationInfo.longitude == "0.0" || address == "") {
+            TipDialog.show("请先选择打卡地址!", WaitDialog.TYPE.ERROR)
+        }
+
+
+        val typeText = binding.tvSignTypeContent.text.toString().trim()
+
+        var signType = ""
+        if (typeText.equals("上班", ignoreCase = true))
+            signType = "START"
+        else if (typeText.equals("下班", ignoreCase = true))
+            signType = "END"
+
+
+        val signUtil = SignUtil()
+        val sign = signUtil.getSignInSign("Android", signType, address)
+        val encryptionAndDecryptUtils = EncryptionAndDecryptUtils()
+        val currentTimeMillis = System.currentTimeMillis()
+        val t =
+            encryptionAndDecryptUtils.encryptAndPrint(currentTimeMillis.toString())
+        if (!isRewindSignIn) {
+            val attachmentsSignInRequestBody = AttachmentsSignInRequestBody(
+                address,
+              key,
+                locationInfo.city,
+                "中国",
+                "",
+                "Android",
+                locationInfo.latitude,
+                locationInfo.longitude,
+                GlobalDataManager.globalPlanId,
+                locationInfo.province,
+                t,
+                signType
+            )
+            api.signInServer(
+                GlobalDataManager.globalToken,
+                sign,
+                GlobalDataManager.globalRoleKey,
+                attachmentsSignInRequestBody
+            ).enqueue(object : Callback<SignInResponseBody> {
+                override fun onResponse(
+                    p0: Call<SignInResponseBody>,
+                    p1: Response<SignInResponseBody>
+                ) {
+                    val attachmentsSignInResponseBody = p1.body()
+                    if (attachmentsSignInResponseBody != null) {
+                        if (attachmentsSignInResponseBody.code == 200) {
+                            TipDialog.show("打卡成功!", WaitDialog.TYPE.SUCCESS)
+                            val date = java.util.Calendar.getInstance()
+                            val year = date.get(java.util.Calendar.YEAR)
+                            val month = date.get(java.util.Calendar.MONTH) + 1
+                            val day = date.get(java.util.Calendar.DAY_OF_MONTH)
+                            listSynchroInit(
+                                year.toString(),
+                                month.toString(),
+                                day.toString()
+                            )
+                        } else {
+                            TipDialog.show(
+                                attachmentsSignInResponseBody.msg,
+                                WaitDialog.TYPE.ERROR
+                            )
+                        }
+                    }
+                }
+
+                override fun onFailure(p0: Call<SignInResponseBody>, p1: Throwable) {
+                    CrashReport.postCatchedException(p1)
+                }
+
+            })
+        } else {
+            //值为2023-08-22 18:03:00形式
+            //获取当前日期年月日
+            val date = java.util.Calendar.getInstance()
+            val year = date.get(java.util.Calendar.YEAR)
+            val month = date.get(java.util.Calendar.MONTH) + 1
+            val day = date.get(java.util.Calendar.DAY_OF_MONTH)
+            //获取当前时间时分秒
+            val hour = date.get(java.util.Calendar.HOUR_OF_DAY)
+            val minute = date.get(java.util.Calendar.MINUTE)
+            val second = date.get(java.util.Calendar.SECOND)
+            //拼接为2023-08-22 18:03:00形式
+            val createTime = "$year-$month-$day $hour:$minute:$second"
+
+
+            val attachmentRewindSignInRequestBody = AttachmentRewindSignInRequestBody(
+                address,
+                key,
+                locationInfo.city,
+                "中国",
+                createTime,
+                "",
+                "Android",
+                locationInfo.latitude,
+                locationInfo.longitude,
+                GlobalDataManager.globalPlanId,
+                locationInfo.province,
+                t,
+                signType
+            )
+            api.rewindSignInServer(
+                GlobalDataManager.globalToken,
+                sign,
+                GlobalDataManager.globalRoleKey,
+                attachmentRewindSignInRequestBody
+            ).enqueue(object : Callback<RewindSignInResponseBody> {
+                override fun onResponse(
+                    p0: Call<RewindSignInResponseBody>,
+                    p1: Response<RewindSignInResponseBody>
+                ) {
+                    val rewindSignInResponseBody = p1.body()
+                    if (rewindSignInResponseBody != null) {
+                        if (rewindSignInResponseBody.code == 200) {
+                            TipDialog.show("打卡成功!", WaitDialog.TYPE.SUCCESS)
+                            val date = java.util.Calendar.getInstance()
+                            val year = date.get(java.util.Calendar.YEAR)
+                            val month = date.get(java.util.Calendar.MONTH) + 1
+                            val day = date.get(java.util.Calendar.DAY_OF_MONTH)
+                            listSynchroInit(
+                                year.toString(),
+                                month.toString(),
+                                day.toString()
+                            )
+                        } else {
+                            TipDialog.show(rewindSignInResponseBody.msg, WaitDialog.TYPE.ERROR)
+                        }
+                    }
+                }
+
+                override fun onFailure(p0: Call<RewindSignInResponseBody>, p1: Throwable) {
+                    CrashReport.postCatchedException(p1)
+                }
+
+            })
+        }
     }
 }

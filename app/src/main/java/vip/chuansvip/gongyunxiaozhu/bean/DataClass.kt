@@ -630,6 +630,23 @@ data class RewindSignInResponseBody(
     val msg: String
 )
 
+
+data class AttachmentRewindSignInRequestBody(
+    val address: String,
+    val attachments: String,
+    val city: String,
+    val country: String,
+    val createTime: String,
+    val description: String,
+    val device: String,
+    val latitude: String,
+    val longitude: String,
+    val planId: String,
+    val province: String,
+    val t: String,
+    val type: String
+)
+
 data class GetPaperResponseBody(
     val code: Int,
     val `data`: GetPaperResponseBodyData,
@@ -641,3 +658,18 @@ data class GetPaperResponseBodyData(
     val id: Int,
     val word_count: Int
 )
+
+data class UploadingImgResponseBody(
+    val hash: String,
+    val key: String
+)
+
+data class GetUploadTokenResponseBody(
+    val code: Int,
+    val `data`: String,
+    val msg: String
+)
+data class GetUploadTokenRequestBody(
+    val t: String
+)
+

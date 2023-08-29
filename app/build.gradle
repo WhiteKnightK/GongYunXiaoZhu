@@ -11,7 +11,7 @@ android {
 
         ndk {
             // 设置支持的SO库架构
-            abiFilters 'armeabi' //, 'x86', 'armeabi-v7a', 'x86_64', 'arm64-v8a'
+            abiFilters 'armeabi', 'x86', 'armeabi-v7a', 'x86_64', 'arm64-v8a'
         }
         applicationId "vip.chuansvip.gongyunxiaozhu"
         minSdk 26
@@ -96,6 +96,7 @@ dependencies {
     }
 
     implementation 'com.tencent.bugly:crashreport:latest.release'
+    implementation 'org.apache.tika:tika-core:1.27'
 
 
 }
