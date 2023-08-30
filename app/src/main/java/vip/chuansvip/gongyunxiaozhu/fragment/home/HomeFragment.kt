@@ -53,7 +53,6 @@ class HomeFragment : Fragment() {
 
     private fun loadServerList() {
 
-
         api.getServerListServer().enqueue(object : Callback<AppServer>{
             override fun onResponse(p0: Call<AppServer>, p1: Response<AppServer>) {
                 val serverList = p1.body()!!.rows

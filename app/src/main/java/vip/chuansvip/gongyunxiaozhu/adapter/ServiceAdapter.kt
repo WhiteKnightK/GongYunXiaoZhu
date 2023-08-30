@@ -1,6 +1,8 @@
 package vip.chuansvip.gongyunxiaozhu.adapter
 
 import android.content.Intent
+import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -44,12 +46,14 @@ class ServiceAdapter(val serviceList: List<AppServerRow>) :
                 val intent = Intent(MyApplication.context,DailyPaperActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 MyApplication.context.startActivity(intent)
+                return@setOnClickListener
             }
             if (service.name == "周报"){
                 DailyPaperActivity.pageType = "week"
                 val intent = Intent(MyApplication.context,DailyPaperActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 MyApplication.context.startActivity(intent)
+                return@setOnClickListener
             }
 
             if (service.name == "月报"){
@@ -57,13 +61,22 @@ class ServiceAdapter(val serviceList: List<AppServerRow>) :
                 val intent = Intent(MyApplication.context,DailyPaperActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 MyApplication.context.startActivity(intent)
+                return@setOnClickListener
             }
 
             if (service.name == "签到"){
                 val intent = Intent(MyApplication.context,SignInActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 MyApplication.context.startActivity(intent)
+                return@setOnClickListener
             }
+            val linkUrl = service.linkUrl
+            if (!linkUrl.isNullOrEmpty()) {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(linkUrl))
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                MyApplication.context.startActivity(intent)
+            }
+
 
 
 

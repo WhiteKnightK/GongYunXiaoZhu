@@ -384,7 +384,7 @@ class SignInActivity : BaseActivity(), SignInImgUtil.SignInImgCallback {
 
         binding.btnAddImg.setOnClickListener {
             BottomMenu.show(arrayOf("拍摄", "从相册选择"))
-                .setMessage("这里是标题")
+                .setMessage("添加附件")
                 .setCancelButton("取消")
                 .setOnMenuItemClickListener(object : OnMenuItemClickListener<BottomMenu> {
                     override fun onClick(

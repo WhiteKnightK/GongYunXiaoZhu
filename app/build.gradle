@@ -16,8 +16,8 @@ android {
         applicationId "vip.chuansvip.gongyunxiaozhu"
         minSdk 26
         targetSdk 33
-        versionCode 3
-        versionName "1.0.2 - 20230827"
+        versionCode 4
+        versionName "1.0.3 - 20230830"
         renderscriptTargetApi 21
         renderscriptSupportModeEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"

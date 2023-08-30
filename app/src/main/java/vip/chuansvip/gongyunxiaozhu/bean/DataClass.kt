@@ -122,7 +122,8 @@ data class AppServer(
 data class AppServerRow(
     val id: Int,
     val name: String,
-    val url: String
+    val url: String,
+    val linkUrl: String
 )
 
 data class GetMoGuDingUserInfoBack(
