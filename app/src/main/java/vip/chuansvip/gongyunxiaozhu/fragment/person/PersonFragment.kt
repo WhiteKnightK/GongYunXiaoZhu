@@ -16,7 +16,6 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.TextView
-import androidx.core.content.ContextCompat.getSystemService
 import androidx.fragment.app.Fragment
 import com.google.gson.Gson
 import com.kongzue.dialogx.DialogX
@@ -42,7 +41,6 @@ import vip.chuansvip.gongyunxiaozhu.activity.NoticeForUseActivity
 import vip.chuansvip.gongyunxiaozhu.bean.FeedBackRequestBody
 import vip.chuansvip.gongyunxiaozhu.bean.FeedBackResponseBody
 import vip.chuansvip.gongyunxiaozhu.bean.GetMoGuDingUserInfoBack
-import vip.chuansvip.gongyunxiaozhu.bean.LoginBack
 import vip.chuansvip.gongyunxiaozhu.bean.LogoutBack
 import vip.chuansvip.gongyunxiaozhu.bean.MoGuDingInfo
 import vip.chuansvip.gongyunxiaozhu.databinding.FragmentPersonBinding
@@ -235,61 +233,69 @@ class PersonFragment : Fragment() {
 //                        return
 //                    }
                     //解密数据
-                    val encryptionAndDecryptUtils = EncryptionAndDecryptUtils()
-                    val userInfoString = encryptionAndDecryptUtils.decryptData(p1.body()?.data!!)
-                    //解析数据
-                    val gson = Gson()
-                    val userInfo = gson.fromJson(userInfoString, MoGuDingInfo::class.java)
-
-                    val orgEntity = userInfo.orgEntity
-
-
-                    //判空
-                    if (orgEntity == null && context != null) {
-                        MessageDialog.show(
-                            "异常，orgEntity为空，点击确定将异常信息发送给管理员",
-                            userInfo.toString(),
-                            "确定"
-                        )
-                            .setOkButtonClickListener { baseDialog, v ->
-                                val clipboard =
-                                    context!!.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                val clipData =
-                                    ClipData.newPlainText("text", userInfo.toString())
-                                clipboard.setPrimaryClip(clipData)
-                                PopTip.show("报错信息复制成功")
-
-                                joinQQGroup("kEfI5W8unKVYRSpvMWBvhJICiBPYZPfC", context!!)
-                                false
-                            }
-                            .setCancelable(false)
+                    if (p1.body()?.data == null) {
+                        TipDialog.show("个人信息返回请求体data为空", WaitDialog.TYPE.ERROR);
                         return
                     }
-
-                    //加载到页面上
-
-                    binding.tvLikeName.text = userInfo.nikeName
-
-                    binding.tvPhone.text = "账号：${userInfo.phone}"
-                    binding.tvSchoolName.text = orgEntity.schoolName
-                    binding.tvDepName.text = orgEntity.depName
-                    binding.tvMajorField.text = orgEntity.majorField
-                    binding.tvGrade.text = orgEntity.grade
-                    binding.tvClassName.text = orgEntity.className
+                    if (p1.body()?.data != null) {
 
 
-                    binding.tvUserId.text = userInfo.userId.toString()
-                    binding.tvMoguNo.text = userInfo.moguNo
-                    var type = ""
-                    if (userInfo.userType == "student") {
-                        type = "学生"
-                    } else if (userInfo.userType == "teacher") {
-                        type = "教师"
+                        val encryptionAndDecryptUtils = EncryptionAndDecryptUtils()
+                        val userInfoString = encryptionAndDecryptUtils.decryptData(p1.body()?.data!!)
+                        //解析数据
+                        val gson = Gson()
+                        val userInfo = gson.fromJson(userInfoString, MoGuDingInfo::class.java)
+
+                        val orgEntity = userInfo.orgEntity
+
+
+                        //判空
+                        if (orgEntity == null && context != null) {
+                            MessageDialog.show(
+                                "异常，orgEntity为空，点击确定将异常信息发送给管理员",
+                                userInfo.toString(),
+                                "确定"
+                            )
+                                .setOkButtonClickListener { baseDialog, v ->
+                                    val clipboard =
+                                        context!!.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                    val clipData =
+                                        ClipData.newPlainText("text", userInfo.toString())
+                                    clipboard.setPrimaryClip(clipData)
+                                    PopTip.show("报错信息复制成功")
+
+                                    joinQQGroup("kEfI5W8unKVYRSpvMWBvhJICiBPYZPfC", context!!)
+                                    false
+                                }
+                                .setCancelable(false)
+                            return
+                        }
+
+                        //加载到页面上
+
+                        binding.tvLikeName.text = userInfo.nikeName
+
+                        binding.tvPhone.text = "账号：${userInfo.phone}"
+                        binding.tvSchoolName.text = orgEntity.schoolName
+                        binding.tvDepName.text = orgEntity.depName
+                        binding.tvMajorField.text = orgEntity.majorField
+                        binding.tvGrade.text = orgEntity.grade
+                        binding.tvClassName.text = orgEntity.className
+
+
+                        binding.tvUserId.text = userInfo.userId.toString()
+                        binding.tvMoguNo.text = userInfo.moguNo
+                        var type = ""
+                        if (userInfo.userType == "student") {
+                            type = "学生"
+                        } else if (userInfo.userType == "teacher") {
+                            type = "教师"
+                        }
+                        binding.tvUserType.text = type
+                        binding.tvCreateTime.text =
+                            TimeStampConverter.convertTimeStampToDateString(userInfo.createTime)
+                        binding.tvMoguAge.text = userInfo.moguAge.toString()
                     }
-                    binding.tvUserType.text = type
-                    binding.tvCreateTime.text =
-                        TimeStampConverter.convertTimeStampToDateString(userInfo.createTime)
-                    binding.tvMoguAge.text = userInfo.moguAge.toString()
 
 
                 }

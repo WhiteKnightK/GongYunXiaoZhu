@@ -79,13 +79,22 @@ class SignInActivity : BaseActivity(), SignInImgUtil.SignInImgCallback {
         if (result.resultCode == RESULT_OK) {
             val receivedBundle = result.data!!.extras
             Log.d("intent检查", "$receivedBundle")
-            val name = receivedBundle?.getString("name")
-            var address = receivedBundle?.getString("address")
-            var province = receivedBundle?.getString("province")
-            var city = receivedBundle?.getString("city")
-            var district = receivedBundle?.getString("district")
-            val latitude = receivedBundle?.getString("latitude")
-            val longitude = receivedBundle?.getString("longitude")
+            val name = receivedBundle?.getString("name","")
+            var address = receivedBundle?.getString("address","")
+            var province = receivedBundle?.getString("province","")
+            var city = receivedBundle?.getString("city","")
+            var district = receivedBundle?.getString("district","")
+            val latitude = receivedBundle?.getString("latitude","")
+            val longitude = receivedBundle?.getString("longitude","")
+
+            if (name == null || address == null || province == null || city == null || district == null || latitude == null || longitude == null){
+                Toast.makeText(this,"定位失败",Toast.LENGTH_SHORT).show()
+                return@registerForActivityResult
+            }
+            if(name == "" || address == "" || province == "" || city == "" || district == "" || latitude == "" || longitude == ""){
+                Toast.makeText(this,"定位失败",Toast.LENGTH_SHORT).show()
+                return@registerForActivityResult
+            }
 
 
 
